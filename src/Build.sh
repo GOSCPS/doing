@@ -1,0 +1,1 @@
+clang++ main.cpp Build.cpp -o doing -O3 -std=c++17
