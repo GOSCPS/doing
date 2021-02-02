@@ -1,82 +1,68 @@
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * THIS FILE IS FROM GOSCPS(goscps@foxmail.com)
- * IS LICENSED UNDER GOSCPS
- * File:     main.cpp
- * Content:  doing main c++ file
- * Copyright (c) 2020 GOSCPS All rights reserved.
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/** * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * @author GOSCPS
+ * @license GOSCPS 许可证
+ * @file    main.cpp
+ * @brief   mian.cpp \n
+ * Copyright (c) 2020-2021 GOSCPS 保留所有权利.
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-#include "Build.hpp"
+#include <string>
+#include <vector>
+#include <iostream>
+#include <set>
+
 #include "main.hpp"
+#include "build.hpp"
 
 using namespace std;
 
-int main(int argc, char *argv[]) {
-  cout << "Build Platform:" << CompilePlatform << endl;
+//Doing版本
+extern const int DoingVersion = 0;
 
-  Build *BuildSystem = new Build("build.do");
+//全局变量表
+std::map<std::string,std::string> GolbalVarTable;
 
-  std::regex TargetRegex("-Target=(\\S+)");
-  std::regex DefineRegex("-D(\\S+)=(\\S+)");
-  std::smatch Result;
-  std::string RegexResultStr;
+int main(int argc,char* argv[]){
 
-  int ArgsPtr = 1;
-  if (argc == 0) {
-    cout << "Not Command Input" << endl;
-    exit(-1);
-  }
+    cout << "Doing build system for everything. Version-" << DoingVersion << endl;
 
-  while (ArgsPtr < argc) {
-    //非选项
-    //为文件
-    if (argv[ArgsPtr][0] != '\0' && argv[ArgsPtr][0] != '-') {
-      if (BuildSystem != nullptr)
-        BuildSystem->SetBuildFile(std::string(argv[ArgsPtr]));
-      ArgsPtr++;
-      continue;
+    string buildFile = "build.doing";
+    set<string> buildTargets;
+
+    //解析参数
+    argc--;
+    for(int a=0;a < argc;a++){
+        string param = argv[a+1];
+    
+        if(param == "-name"){
+            if(++a >= argc){
+                cout << "Error:set name but not input file name" << endl;
+                return -1;
+            }
+            else{
+                buildFile = argv[a+1];
+                continue;
+            }
+        }
+        else{
+            buildTargets.insert(argv[a+1]);
+        }
     }
 
-    //定义Target
-    else if (regex_match(RegexResultStr = std::string(argv[ArgsPtr]), Result,
-                         TargetRegex)) {
-      if (BuildSystem != nullptr) {
-        BuildSystem->SetStartTarget(Result.str(1));
-        cout << "Target:" << Result.str(1) << endl;
-      }
-      ArgsPtr++;
-      continue;
+    cout << "Will build file:" << buildFile << endl;
+    cout << "Will build targets:" << endl;
+    for(auto a=buildTargets.cbegin();a != buildTargets.cend();a++){
+        cout << "\t" << *a << endl;
+    }
+    if(buildTargets.size() == 0){
+        cout << "\tNo DEF" << endl;
     }
 
-    //预定义
-    else if (regex_match(RegexResultStr = std::string(argv[ArgsPtr]), Result,
-                         DefineRegex)) {
-      if (BuildSystem != nullptr) {
-        BuildSystem->AdvanceDefine(Result.str(1), Result.str(2));
-        cout << "Define: \'" << Result.str(1) << "\' : \'" << Result.str(2)
-             << "\'" << endl;
-      }
-      ArgsPtr++;
-      continue;
-    }
+    //初始化全局变量表
 
-    else {
-      cout << Color_Red << "Command Not Found" << Color_Clear << endl;
-      exit(-1);
-    }
-  }
+    //操作系统设置
+    GolbalVarTable.insert(pair<string,string>("__DOINGOS",DOINGOS));
 
-  BuildSystem->AdvanceDefine(CompilePlatform, "1");
 
-  if (BuildSystem != nullptr) {
-    //返回非0，错误
-    if (BuildSystem->BuildStart()) {
-      delete BuildSystem;
-      return -1;
-    } else {
-      delete BuildSystem;
-    }
-  }
-
-  return 0;
+    return Build(buildFile,buildTargets);
 }

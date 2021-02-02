@@ -1,262 +1,533 @@
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * THIS FILE IS FROM GOSCPS(goscps@foxmail.com)
- * IS LICENSED UNDER GOSCPS
- * File:     Build.cpp
- * Content:  doing Build c++ file
- * Copyright (c) 2020 GOSCPS All rights reserved.
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-#include "Build.hpp"
+/** * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * @author GOSCPS
+ * @license GOSCPS 许可证
+ * @file    build.cpp
+ * @brief   build.cpp \n
+ * Copyright (c) 2020-2021 GOSCPS 保留所有权利.
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
 #include "main.hpp"
+#include "target.hpp"
+#include "rule.hpp"
+#include "run.hpp"
 
-int Build::BuildStart() {
-  std::cout << "Build For " << File << std::endl;
+#include <ctype.h>
+#include <iterator>
+#include <string>
+#include <set>
+#include <map>
+#include <iostream>
+#include <fstream>
+#include <vector>
+#include <sstream>
+#include <regex>
+#include <cerrno>
+#include <cstring>
+#include <optional>
 
-  std::ifstream IfStreeam(File);
-  if (!IfStreeam.good()) {
-    std::cout << "File Open Error" << std::endl;
-    return -1;
-  }
+using namespace std;
 
-  //读取文件
-  std::string Buf;
-  std::string Source;
-  while (std::getline(IfStreeam, Buf)) {
-    Source.append(Buf);
-    Source.append("\n");
-  }
-
-  //预处理
-  if (Pretreatment(Source)) {
-    std::cout << Color_Red << "Pretreatment Error" << Color_Clear << std::endl;
-    return -1;
-  }
-
-  return Parser(Source);
+//跳过空格
+void JumpSpace(string::iterator& begin,string::iterator& end){
+    while(begin != end){
+        if(isspace(*begin)){
+            begin++;
+        }
+        else break;
+    }
+    return;
 }
 
-inline std::string Trim(std::string Source) {
-  if (Source.empty())
-    return Source;
-  {
-    size_t a = 0;
-    for (int b = 0; b < Source.size(); b++) {
-      if (std::isspace(Source[b]))
-        a++;
-      else
-        break;
+//读取下一个单词
+string ReadNextWord(string::iterator &begin,string::iterator &end){
+string a;
+while(begin != end){
+        if(!isspace(*begin)){
+            a += *begin;
+            begin++;
+        }
+        else break;
     }
-    Source = Source.substr(a);
-  }
-  {
-    size_t a = 0;
-    for (auto b = Source.rbegin(); b != Source.rend(); b++) {
-      if (std::isspace(*b))
-        a++;
-      else
-        break;
-    }
-    Source = Source.substr(0, Source.size() - a);
-  }
-  return Source;
+return a;
 }
 
-inline std::vector<std::string> Split(std::string Source, std::string Regex) {
-  std::regex re(Regex);
-  std::vector<std::string> Line(
-      std::sregex_token_iterator(Source.cbegin(), Source.cend(), re, -1),
-      std::sregex_token_iterator());
-  return Line;
+//Trim函数
+string Trim(string s) 
+{
+    if (s.empty()) 
+    {
+        return s;
+    }
+    s.erase(0,s.find_first_not_of(" "));
+    s.erase(s.find_last_not_of(" ") + 1);
+
+    return s;
 }
 
-//预处理
-int Build::Pretreatment(std::string &Source) {
-  std::cout << "Pretreatment..." << std::endl;
 
-  auto Line = Split(Source, "\\n");
-  int Row = 0;
-  std::regex IsIf("(#Endif)|(#If\\S+)\\s+.+");
-  std::regex IsImport("#Import\\s+\\S+");
+//读取定义
+//Key = Value
+pair<string,string> Parse_Define(string::iterator &begin,string::iterator &end){
+    pair<string,string> ret("","");
 
-  for (auto &s : Line) {
-    Row++;
+    JumpSpace(begin,end);
+    string key = ReadNextWord(begin,end);
+    JumpSpace(begin,end);
+    string equal = ReadNextWord(begin,end);
+    JumpSpace(begin,end);
 
-    s = Trim(s);
-    if (s.empty())
-      continue;
-    if (s[0] == ';') {
-      s = ""; //删除注释
-      continue;
+    //将等号后的所有字符串Trim后视为Value
+    string value;
+    while(begin != end){
+        value += *begin;
+        begin++;
+    }
+    value = Trim(value);
+
+    if(key.empty()){
+        cout << "Error:for key error" << endl;
+        return ret;
+    }
+    if(equal.empty() || equal != "="){
+        cout << "Error:miss token`=`" << endl;
+        return ret;
+    }
+    if(key.empty()){
+        cout << "Error:for value error" << endl;
+        return ret;
     }
 
-    //是If，送入PretreatmentIF
-    if (std::regex_match(s, IsIf)) {
-      if (PretreatmentIF(s, Row))
+    ret.first = key;
+    ret.second = value;
+
+    return ret;
+}
+
+int Parse_For(vector<string>::iterator& Begin,vector<string>::iterator& End){
+    /*
+    {
+        auto a = Begin->begin();
+        auto b = Begin->end();
+        string IsFor = ReadNextWord(a,b);
+
+        if(IsFor != "for"){
+            cout << "Error:Doing Error:Much For" << endl;
+            return -1;
+        }
+    }*/
+    string First = *Begin;
+
+    auto FirstB = First.begin();
+    auto FirstE = First.end();
+
+    //跳过for
+    ReadNextWord(FirstB,FirstE);
+    JumpSpace(FirstB,FirstE);
+
+    string OsName =  ReadNextWord(FirstB,FirstE);
+    if(OsName.empty()){
+        cout << "Error:for but not keyword"  <<  *Begin << endl;
         return -1;
-      s = ""; //删除预处理语句
-      continue;
     }
 
-    //为忽略
-    if (PretreatmentIgnore.size() != 0 && *PretreatmentIgnore.rbegin()) {
-      s = "";
-      continue;
+    //获取操作系统名称
+    bool NeedDefine = false;
+    if(OsName == DOINGOS){
+        NeedDefine = true;
+    }
+    Begin++;
+
+    //解析变量
+    while(true){
+        if(Begin == End){
+            cout << "Error:for but get EOF" << endl;
+            return -1;
+        }
+        if(Begin->empty()){
+            Begin++;
+            continue;
+        }
+        string def = *Begin;
+        auto bgn = def.begin();
+        auto end = def.end();
+
+        if(def == "end for"){
+            Begin++;
+            break;
+        }
+
+        auto define = Parse_Define(bgn,end);
+
+        if(define.first.empty() || define.second.empty()){
+            cout << "Error:Parse Define Error:" << def << endl;
+            return -1;
+        }
+        else if(NeedDefine){
+            GolbalVarTable.insert(define);
+        }
+        Begin++;
     }
 
-    // Import语句
-    if (std::regex_match(s, IsImport)) {
-      if (Import(s, Row))
+    return 0;
+}
+
+optional<Rule> Parse_Rule(vector<string>::iterator& Begin,vector<string>::iterator& End){
+    Rule rule;
+
+    //获取规则名称
+    string First = *Begin;
+
+    auto FirstB = First.begin();
+    auto FirstE = First.end();
+
+    //跳过rule
+    ReadNextWord(FirstB,FirstE);
+    JumpSpace(FirstB,FirstE);
+
+    string Name =  ReadNextWord(FirstB,FirstE);
+    if(Name.empty()){
+        cout << "Error:rule but not name" <<  *Begin << endl;
+        return nullopt;
+    }
+    else{
+        rule.Name = Name;
+    }
+
+    Begin++;
+    //解析内容
+    while(true){
+        if(Begin == End){
+            cout << "Error:rule but get EOF" << endl;
+            return nullopt;
+        }
+        if(Begin->empty()){
+            Begin++;
+            continue;
+        }
+        string def = *Begin;
+        auto bgn = def.begin();
+        auto end = def.end();
+
+        if(def == "end rule"){
+            Begin++;
+            break;
+        }
+
+        auto define = Parse_Define(bgn,end);
+
+        if(define.first.empty() || define.second.empty()){
+            cout << "Error:Parse Define Error:" << def << endl;
+            return nullopt;
+        }
+        //define分类 
+        if(define.first == "commandline"){
+            rule.CommandLine = define.second;
+        }
+        else if(define.first == "introduction"){
+            rule.Introduction = define.second;
+        }
+        else if(define.first == "depend"){
+            rule.Depend = define.second;
+        }
+        else{
+            cout << "Error:Unknown Rule:" << *Begin << endl;
+            return nullopt;
+        }
+
+        Begin++;
+    }
+
+    return rule;
+}
+
+
+optional<Run> Parse_Run(vector<string>::iterator& Begin,vector<string>::iterator& End){
+    Run run;
+
+    //获取规则名称
+    string First = *Begin;
+
+    auto FirstB = First.begin();
+    auto FirstE = First.end();
+
+    //跳过run
+    ReadNextWord(FirstB,FirstE);
+    JumpSpace(FirstB,FirstE);
+
+    string Name =  ReadNextWord(FirstB,FirstE);
+    JumpSpace(FirstB,FirstE);
+    //读取RuleName
+    if(Name.empty()){
+        cout << "Error:run but not rule" <<  *Begin << endl;
+        return nullopt;
+    }
+    else{
+        run.RunRule = Name;
+    }
+
+    //没有with
+    //则直接返回
+    JumpSpace(FirstB,FirstE);
+    if(FirstB != FirstE){
+        string keyWith = ReadNextWord(FirstB,FirstE);
+
+        if(keyWith != "with"){
+            cout << "Error:Unknown Run options" << *Begin << endl;
+            return nullopt;
+        }
+    }
+    else{
+        return run;
+    }
+
+
+    Begin++;
+    //解析内容
+    while(true){
+        if(Begin == End){
+            cout << "Error:rule but get EOF" << endl;
+            return nullopt;
+        }
+        if(Begin->empty()){
+            Begin++;
+            continue;
+        }
+        string def = *Begin;
+        auto bgn = def.begin();
+        auto end = def.end();
+
+        if(def == "end run"){
+            Begin++;
+            break;
+        }
+
+        auto define = Parse_Define(bgn,end);
+
+        if(define.first.empty() || define.second.empty()){
+            cout << "Error:Parse Define Error:" << def << endl;
+            return nullopt;
+        }
+        else{
+            run.RunWith.insert(define);
+        }
+
+
+        Begin++;
+    }
+
+    return run;
+}
+
+optional<Target> Parse_Target(vector<string>::iterator& Begin,vector<string>::iterator& End){
+    Target target;
+
+    //获取规则名称
+    string First = *Begin;
+
+    auto FirstB = First.begin();
+    auto FirstE = First.end();
+
+    //跳过target
+    ReadNextWord(FirstB,FirstE);
+    JumpSpace(FirstB,FirstE);
+
+    string Name =  ReadNextWord(FirstB,FirstE);
+    JumpSpace(FirstB,FirstE);
+    if(Name.empty()){
+        cout << "Error:rule but not name" << endl;
+        return nullopt;
+    }
+    else{
+        target.Name = Name;
+    }
+
+    //解析need
+    if(FirstB != FirstE){
+        string NeedKey = ReadNextWord(FirstB,FirstE);
+        if(NeedKey != "need"){
+            cout << "Error:Target Parse Error:" << *Begin << endl;
+            return nullopt;
+        }
+
+        while(FirstB != FirstE){
+            JumpSpace(FirstB,FirstE);
+            string Needs = ReadNextWord(FirstB,FirstE);
+
+            if(Needs.empty())
+                break;
+            target.TargetDepend.push_back(Needs);
+        }
+    }
+
+    Begin++;
+    //解析内容
+    while(true){
+        if(Begin == End){
+            cout << "Error:target but get EOF" << endl;
+            return nullopt;
+        }
+        if(Begin->empty()){
+            Begin++;
+            continue;
+        }
+        string def = *Begin;
+        auto bgn = def.begin();
+        auto end = def.end();
+
+        if(def == "end target"){
+            Begin++;
+            break;
+        }
+
+        auto define = ReadNextWord(bgn,end);
+            
+        if(define == "run"){
+            auto runs = Parse_Run(Begin,End);
+            if(!runs.has_value()){
+                cout << "Error:target Parse Error:" << *Begin << endl;
+                return nullopt;
+            }
+            else{
+                target.runList.push_back(runs.value());
+            }
+        }
+        else{
+            cout << "Error:Unknown Rule:" << *Begin << endl;
+            return nullopt;
+        }
+
+        Begin++;
+    }
+
+    return target;
+}
+
+//解析总线
+int Parse(vector<string> in){
+    auto NowLine = in.begin();
+    auto EndLine = in.end();
+
+    vector<Rule> rules;
+    vector<Target> targets;
+
+    while(true){
+        if(NowLine == EndLine){
+            break;
+        }
+
+        auto Begin = (*NowLine).begin();
+        auto End = (*NowLine).end();
+
+        //跳过空行和注释
+        if(Begin == End){
+            NowLine++;
+            continue;
+        }
+        else if(*Begin == '#'){
+            NowLine++;
+            continue;
+        }
+
+        string keyword = ReadNextWord(Begin,End);
+
+        //解析关键字
+        if(keyword == "for"){
+            auto result = Parse_For(NowLine,EndLine);
+            if(result != 0){
+                return result;
+            }
+            continue;
+        }
+        else if(keyword == "rule"){
+            auto result = Parse_Rule(NowLine,EndLine);
+            if(!result.has_value()){
+                return -1;
+            }
+            rules.push_back(result.value());
+        }
+            else if(keyword == "target"){
+            auto result = Parse_Target(NowLine,EndLine);
+            if(!result.has_value()){
+                return -1;
+            }
+            targets.push_back(result.value());
+            }
+        else{
+            cout << "Error Unknow Word:" << keyword << endl;
+            return -1; 
+        }
+
+    }
+
+    cout << "GolbalVarTable:" << endl;
+    for(auto a = GolbalVarTable.cbegin();a != GolbalVarTable.cend();a++){
+        cout << "\t" << a->first << ":" << a->second << endl;
+    }
+
+     cout << "Targets:" << endl;
+    for(auto a=targets.cbegin();a != targets.cend();a++){
+        cout << "\tTarget:" << a->Name << endl;
+        
+        cout << "\tDepends:" << endl;
+        for(auto b=a->TargetDepend.cbegin();b != a->TargetDepend.end();b++){
+            cout << "\t\t" << *b << endl;
+        }
+
+        cout << "\tRuns:" << endl;
+        for(auto b=a->runList.cbegin();b != a->runList.end();b++){
+            cout << "\t\t" << b->RunRule << endl;
+
+            cout << "\t\tRunWith:" << endl;
+            for(auto c = b->RunWith.cbegin();c != b->RunWith.cend();c++){
+                cout << "\t\t\t" << c->first << ":" << c->second << endl;
+            }
+        }
+    }
+
+     cout << "Rules:" << endl;
+    for(auto a=rules.cbegin();a != rules.cend();a++){
+        cout << "\tRule:" << a->Name << endl;
+        cout << "\t\tCommandLine:" << a->CommandLine << endl;
+        cout << "\t\tDepend:" << a->Depend << endl;
+        cout << "\t\tIntroduction:" << a->Introduction << endl;
+    }
+
+
+return 0;
+}
+
+
+//构建初始化
+int Build(std::string fileName,std::set<std::string> tagrets){
+
+    stringstream DoingStdIO;
+
+    fstream ifs;
+    ifs.open(fileName,ios::in);
+
+    if(!(ifs.good() && ifs.is_open())){
+        cout << "File Open Error Code:" << errno << " Because:" << strerror(errno) << endl;
         return -1;
-      s = "";
-      continue;
     }
 
-    //非Define预处理器语句则替换
-    if (PretreatmentDefine(s, Row)) {
-      DefineReplace(s);
-    } else
-      s = ""; //删除预处理语句
-  }
-  std::string Out;
-  for (auto s : Line) {
-    Out.append(s);
-    Out.append("\n");
-  }
+    char reader;
 
-  std::cout << Out << std::endl;
+    while(ifs.read(&reader,1))
+        DoingStdIO << reader;
 
-  return 0;
-}
+    ifs.close();
 
-//#If的处理
-//处理正确为0
-//错误为-1
-int Build::PretreatmentIF(const std::string &Source, int Row) {
-  //定义不忽略
-  std::regex IfdefRegex("#Ifdef\\s+(\\S+)");
-  //定义忽略
-  std::regex IfndefRegex("#Ifndef\\s+(\\S+)");
+    string Doing = DoingStdIO.str();
 
-  std::smatch Result;
-
-  //优先处理#Endif
-  if (Source == "#Endif") {
-    if (PretreatmentIgnore.size() != 0)
-      PretreatmentIgnore.pop_back();
-    else {
-      std::cout << Color_Red << "Error At line " << Row << ": Too Much #Endif"
-                << Color_Clear << std::endl;
-      return -1;
-    }
-    return 0;
-  }
-
-  //为忽略，不处理IF
-  if (PretreatmentIgnore.size() != 0 && *PretreatmentIgnore.rbegin()) {
-    PretreatmentIgnore.push_back(true);
-    return 0;
-  }
-
-  if (std::regex_match(Source, Result, IfdefRegex)) {
-    if (Defines.find(Result.str(1)) == Defines.cend())
-      PretreatmentIgnore.push_back(true);
-    else
-      PretreatmentIgnore.push_back(false);
-
-    return 0;
-  } else if (std::regex_match(Source, Result, IfndefRegex)) {
-    if (Defines.find(Result.str(1)) != Defines.cend())
-      PretreatmentIgnore.push_back(true);
-    else
-      PretreatmentIgnore.push_back(false);
-
-    return 0;
-  }
-
-  std::cout << Color_Red << "Error At line " << Row << ": Unknown If"
-            << Color_Clear << std::endl;
-  return -1;
-}
-
-//是Define或Undef
-//否则为-1
-int Build::PretreatmentDefine(const std::string &Source, int Row) {
-  std::regex DefinRegex("#Define\\s+(\\S+)\\s+(\\S+)");
-  std::regex UndefRegex("#Undef\\s+(\\S+)");
-
-  std::smatch Result;
-  // Define
-  if (std::regex_match(Source, Result, DefinRegex)) {
-    //重定义
-    if (Defines.find(Result.str(1)) != Defines.cend()) {
-      std::cout << Color_Yellow << "Warning At line " << Row
-                << ":Pretreatment Defined:  " << Result.str(1) << Color_Clear
-                << std::endl;
+    //开始处理
+    regex lines("(\\r)|(\\n)|(\\r\\n)");
+    vector<string> DoingLines(sregex_token_iterator(Doing.begin(),Doing.end(),lines,-1),
+    sregex_token_iterator());
+    
+    //Trim
+    for(auto a=DoingLines.begin();a != DoingLines.cend();a++){
+        *a = Trim(*a);
     }
 
-    Defines.insert(std::make_pair(Result.str(1), Result.str(2)));
-    std::cout << "Pretreatment Define: \'" << Result.str(1) << "\' -> \'"
-              << Result.str(2) << "\'" << std::endl;
-    return 0;
-  }
-
-  // Undef
-  else if (std::regex_match(Source, Result, UndefRegex)) {
-    std::cout << "Pretreatment Undef: " << Result.str(1) << std::endl;
-    Defines.erase(Result.str(1));
-    return 0;
-  }
-
-  return -1;
-}
-
-void Build::DefineReplace(std::string &Source) {
-  bool Finded = true;
-  while (Finded) {
-    Finded = false;
-
-    for (auto Def : Defines) {
-      if (Source.find(Def.first) != Source.npos) {
-        Finded = true;
-        Source = Source.replace(Source.find(Def.first), Def.first.size(),
-                                Def.second);
-      } else
-        continue;
-    }
-  }
-
-  return;
-}
-
-//解析器
-int Build::Parser(std::string &Source) {
-  std::cout << "Build..." << std::endl;
-
-  return 0;
-}
-
-//添加一些编译器变量
-int Build::Import(std::string &Source, int Row) {
-  std::regex ImportRegex("#Impoer\\s(\\S+)");
-
-  std::smatch Result;
-
-  if (std::regex_match(Source, Result, ImportRegex)) {
-    if (Result.str(1) == "Clang") {
-      AdvanceDefine("$c++$", "clang++");
-      AdvanceDefine("$c$", "clang");
-      AdvanceDefine("$linker$", "lld");
-    } else if (Result.str(1) == "Gcc") {
-      AdvanceDefine("$c++$", "g++");
-      AdvanceDefine("$c$", "gcc");
-      AdvanceDefine("$linker$", "lld");
-    } else if (Result.str(1) == "msvc") {
-      AdvanceDefine("$c++$", "msvc");
-      AdvanceDefine("$c$", "msvc");
-      AdvanceDefine("$linker$", "link");
-    }
-
-    return 0;
-  }
-
-  return -1;
+    return Parse(DoingLines);
 }

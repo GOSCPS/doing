@@ -1,0 +1,23 @@
+# Doing Can Build Itself!
+
+for OS_WINDOW
+CC = cl
+end for
+
+for OS_LINUX
+CC = clang++
+end for
+
+rule CompileC
+commandline = ${CC} ${CFLAGS} ${SOURCE}
+introduction = Compile ${SOURCE}
+depend = ${CC}
+end rule
+
+target doing need 1 2 3
+run CompileC with
+CFLAGS = -O3 -o doing -std=c++17 -Wall -Wextra
+SOURCE = mian.cpp rule.cpp target.cpp build.cpp run.cpp
+end run
+run CompileC
+end target

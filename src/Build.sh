@@ -1,1 +1,1 @@
-clang++ main.cpp Build.cpp -o doing -O3 -std=c++17
+clang++ -std=c++17 -O3 -o doing -Wall -Wextra main.cpp build.cpp run.cpp target.cpp rule.cpp

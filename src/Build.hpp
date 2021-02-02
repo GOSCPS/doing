@@ -1,55 +1,39 @@
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * THIS FILE IS FROM GOSCPS(goscps@foxmail.com)
- * IS LICENSED UNDER GOSCPS
- * File:     Build.hpp
- * Content:  doing Build c++ head file
- * Copyright (c) 2020 GOSCPS All rights reserved.
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/** * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * @author GOSCPS
+ * @license GOSCPS 许可证
+ * @file    build.hpp
+ * @brief   build.hpp \n
+ * Copyright (c) 2020-2021 GOSCPS 保留所有权利.
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 #pragma once
 
-#include "main.hpp"
+#include <string>
+#include <set>
+#include <map>
 
-class Build {
-public:
-  Build &operator=(const Build &) = delete;
-  Build(const Build &) = delete;
-  Build(std::string_view File) { this->File = std::string(File); }
-  ~Build() {}
+//#基础语法
+//Version = 0
+//
+//for OS_WINDOWS
+//CC = cl
+//LINKER = ld-link
+//end for
+//
+//for OS_LINUX
+//CC = clang
+//LINKER = ld.lld
+//end for
+//
+//rule CompileC
+//commandline = ${CC} ${CCFLAGS} ${Source}
+//Introduction = CompileC
+//depend = ${CC}
+//end rule
+//
+//target doing need SomeDepend
+//run CompileC with 
+//Source = main.c
+//end with
+//end target
 
-  //开始构建
-  int BuildStart();
-  //设置构建目标
-  void SetStartTarget(std::string s) { StartTarget = s; }
-  //设置构建文件
-  void SetBuildFile(std::string s) { File = s; }
-
-  //添加预定义
-  void AdvanceDefine(std::string Key, std::string Vulan) {
-    //已存在则不添加
-    if (Defines.find(Key) != Defines.cend()) {
-      std::cout << Color_Yellow
-                << "Warning At Command Param:Pretreatment Defined"
-                << Color_Clear << std::endl;
-      return;
-    } else
-      Defines.insert(std::make_pair(Key, Vulan));
-    return;
-  }
-
-private:
-  std::string File = "build.do";
-  std::string StartTarget = "Main";
-  int Pretreatment(std::string &Source);
-  int Parser(std::string &Source);
-  std::map<std::string, std::string> Defines;
-  std::vector<bool> PretreatmentIgnore; //由PretreatmentIF设置，用于忽略
-
-  //预处理If
-  int PretreatmentIF(const std::string &Source, int Row);
-  //预处理Define
-  int PretreatmentDefine(const std::string &Source, int Row);
-  //预处理Replace
-  void DefineReplace(std::string &Source);
-  //导入编译器变量
-  int Import(std::string &Source, int Row);
-};
+int Build(std::string fileName,std::set<std::string> tagrets);
