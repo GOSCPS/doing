@@ -124,16 +124,19 @@ int Parse_For(vector<string>::iterator& Begin,vector<string>::iterator& End){
     ReadNextWord(FirstB,FirstE);
     JumpSpace(FirstB,FirstE);
 
-    string OsName =  ReadNextWord(FirstB,FirstE);
-    if(OsName.empty()){
+    string If =  ReadNextWord(FirstB,FirstE);
+    if(If.empty()){
         cout << "Error:for but not keyword"  <<  *Begin << endl;
         return -1;
     }
 
-    //获取操作系统名称
+    //判断是否在全局变量当中
     bool NeedDefine = false;
-    if(OsName == DOINGOS){
-        NeedDefine = true;
+    for(auto a = GolbalVarTable.cbegin();a != GolbalVarTable.cend();a++){
+        if(a->first == If){
+            NeedDefine = true;
+            break;
+        }
     }
     Begin++;
 
@@ -459,6 +462,7 @@ int Parse(vector<string> in){
 
     }
 
+    #ifdef DEBUG
     cout << "GolbalVarTable:" << endl;
     for(auto a = GolbalVarTable.cbegin();a != GolbalVarTable.cend();a++){
         cout << "\t" << a->first << ":" << a->second << endl;
@@ -491,6 +495,7 @@ int Parse(vector<string> in){
         cout << "\t\tDepend:" << a->Depend << endl;
         cout << "\t\tIntroduction:" << a->Introduction << endl;
     }
+    #endif
 
 
 return 0;

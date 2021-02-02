@@ -44,6 +44,17 @@ int main(int argc,char* argv[]){
                 continue;
             }
         }
+        else if(param == "-D"){
+            ++a;
+            if(++a >= argc){
+                cout << "Error:define but not key or value" << endl;
+                return -1;
+            }
+            else{
+                GolbalVarTable.insert(pair<string,string>(argv[a],argv[a+1]));
+                continue;
+            }
+        }
         else{
             buildTargets.insert(argv[a+1]);
         }
@@ -61,7 +72,7 @@ int main(int argc,char* argv[]){
     //初始化全局变量表
 
     //操作系统设置
-    GolbalVarTable.insert(pair<string,string>("__DOINGOS",DOINGOS));
+    GolbalVarTable.insert(pair<string,string>(DOINGOS,DOINGOS));
 
 
     return Build(buildFile,buildTargets);

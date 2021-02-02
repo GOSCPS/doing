@@ -16,9 +16,9 @@ extern const int DoingVersion;
 extern std::map<std::string,std::string> GolbalVarTable;
 
 #ifdef _WIN32 
-constexpr const char* DOINGOS = "OS_WINDOW";
+constexpr const char* DOINGOS = "__OS_WINDOW";
 #elif defined(__linux__ )
-constexpr const char* DOINGOS = "OS_LINUX";
+constexpr const char* DOINGOS = "__OS_LINUX";
 #else
 #error("Unsupports OS")
 #endif  
