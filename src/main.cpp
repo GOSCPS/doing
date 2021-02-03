@@ -72,7 +72,8 @@ int main(int argc,char* argv[]){
     //初始化全局变量表
 
     //操作系统设置
-    GolbalVarTable.insert(pair<string,string>(DOINGOS,DOINGOS));
+    GolbalVarTable.insert(pair<string,string>(DOINGOS,"_"));
+     GolbalVarTable.insert(pair<string,string>("_","_"));
 
 
     return Build(buildFile,buildTargets);

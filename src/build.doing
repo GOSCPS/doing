@@ -2,20 +2,18 @@
 
 for __OS_WINDOW
     CC = cl
-    CL = _
 end for
 
 for __OS_LINUX
     CC = clang++
-    CLANG = _
 end for
 
-for CLANG
-    LINKER = ld.lld
+for _
+CXXFlags = -DRELEAST
 end for
 
-for CL
-    LINKER = ld.link
+for DEBUG
+CXXFlags = -DDEBUG
 end for
 
 rule CompileC
@@ -24,10 +22,16 @@ rule CompileC
     depend = ${CC}
 end rule
 
-target doing need 1 2 3
+
+target doing
     run CompileC with
         CFLAGS = -O3 -o doing -std=c++17 -Wall -Wextra
-        SOURCE = mian.cpp rule.cpp target.cpp build.cpp run.cpp
+        SOURCE = main.cpp builder.cpp build.cpp
     end run
-    run CompileC
+end target
+
+target default need doing
+end target
+
+target install need doing
 end target

@@ -9,6 +9,7 @@
 #include "main.hpp"
 #include "target.hpp"
 #include "rule.hpp"
+#include "build.hpp"
 #include "run.hpp"
 
 #include <ctype.h>
@@ -406,7 +407,7 @@ optional<Target> Parse_Target(vector<string>::iterator& Begin,vector<string>::it
 }
 
 //解析总线
-int Parse(vector<string> in){
+int Parse(vector<string> in,set<string> RunTargets){
     auto NowLine = in.begin();
     auto EndLine = in.end();
 
@@ -463,6 +464,8 @@ int Parse(vector<string> in){
     }
 
     #ifdef DEBUG
+    cout << "ParseInfo:" << endl << endl;
+
     cout << "GolbalVarTable:" << endl;
     for(auto a = GolbalVarTable.cbegin();a != GolbalVarTable.cend();a++){
         cout << "\t" << a->first << ":" << a->second << endl;
@@ -495,8 +498,27 @@ int Parse(vector<string> in){
         cout << "\t\tDepend:" << a->Depend << endl;
         cout << "\t\tIntroduction:" << a->Introduction << endl;
     }
+
+    cout << "END:" << endl << endl;
     #endif
 
+    //构建
+    Builder builder;
+    builder.RuleList = rules;
+    builder.TargetList = targets;
+    
+    if(RunTargets.size() == 0){
+        cout << "Warn:Unknown Targets.Default `default`" << endl;
+        return builder.BuildTarget("default");
+    }
+    else{
+        for(auto a=RunTargets.begin();a != RunTargets.end();a++){
+            int result = builder.BuildTarget(*a);
+            if(result != 0){
+                return result;
+            }
+        }
+    }
 
 return 0;
 }
@@ -534,5 +556,5 @@ int Build(std::string fileName,std::set<std::string> tagrets){
         *a = Trim(*a);
     }
 
-    return Parse(DoingLines);
+    return Parse(DoingLines,tagrets);
 }
