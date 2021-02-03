@@ -9,7 +9,7 @@
 #include "main.hpp"
 #include "target.hpp"
 #include "rule.hpp"
-#include "build.hpp"
+#include "Build.hpp"
 #include "run.hpp"
 
 #include <ctype.h>
