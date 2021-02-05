@@ -1,0 +1,26 @@
+{
+  "Include": [],
+  "Using": "",
+  "Version": "0.0.1.0",
+  "Targets": [
+    {
+      "Name": "doing",
+      "Depend": [],
+      "RunList": [
+        {
+          "Rule": "dotnet",
+          "With": {}
+        }
+      ]
+    }
+  ],
+  "Rules": [
+    {
+      "Name": "dotnet",
+      "Proc": "dotnet",
+      "Args": "build",
+      "Depend": "dotnet",
+      "Introduction": "Doing\u0027s building itself!"
+    }
+  ]
+}

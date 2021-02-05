@@ -1,0 +1,37 @@
+# Doing Can Build Itself!
+
+for __OS_WINDOW
+    CC = cl
+end for
+
+for __OS_LINUX
+    CC = clang++
+end for
+
+for _
+CXXFlags = -DRELEAST
+end for
+
+for DEBUG
+CXXFlags = -DDEBUG
+end for
+
+rule CompileC
+    commandline = ${CC} ${CFLAGS} ${SOURCE}
+    introduction = Compile ${SOURCE}
+    depend = ${CC}
+end rule
+
+
+target doing
+    run CompileC with
+        CFLAGS = -O3 -o doing -std=c++17 -Wall -Wextra
+        SOURCE = main.cpp builder.cpp build.cpp
+    end run
+end target
+
+target default need doing
+end target
+
+target install need doing
+end target
