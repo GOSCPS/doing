@@ -5,11 +5,7 @@
  * Content: TopSort Source Files
  * Copyright (c) 2020-2021 GOSCPS 保留所有权利.
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace doing.Algorithm
 {
@@ -32,7 +28,7 @@ namespace doing.Algorithm
         /// <returns>排序结果</returns>
         public static Build.Target[] Sort()
         {
-            foreach(var t in Build.GlobalContext.AimTarget)
+            foreach (var t in Build.GlobalContext.AimTarget)
             {
                 Access(t);
             }
@@ -41,17 +37,17 @@ namespace doing.Algorithm
 
         private static void Access(Build.Target t)
         {
-            if(!accessed.TryGetValue(t,out bool isInSatck))
+            if (!accessed.TryGetValue(t, out bool isInSatck))
             {
                 //置入栈中
                 accessed.Add(t, true);
 
-                foreach(var dep in t.Deps)
+                foreach (var dep in t.Deps)
                 {
                     Build.Target depTarget = null;
-                    foreach(var dt in Build.GlobalContext.TargetList)
+                    foreach (var dt in Build.GlobalContext.TargetList)
                     {
-                        if(dep.Name == dt.Name)
+                        if (dep.Name == dt.Name)
                         {
                             depTarget = dt;
                             break;

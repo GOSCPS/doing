@@ -150,8 +150,6 @@ namespace doing
 
                 //构建
                 Build.BuildController.Build();
-
-                return 0;
             }
             catch (System.Exception err)
             {

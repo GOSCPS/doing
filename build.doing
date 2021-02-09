@@ -1,0 +1,9 @@
+# Build doing
+\"Print"{"Doing can build itself!"}
+
+target "doing"
+\"Sh"{"cd doing ; dotnet build --configuration Release"}
+end
+
+target "default" : "doing"
+end
