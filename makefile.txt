@@ -1,0 +1,25 @@
+# Doing语法实例集
+
+# include从系统获取引用文件
+# include [Package]
+include "GOSCPS"
+
+#using加载扩展
+# using [expand]
+using "GOSCPS"
+
+# using & include预处理后消失
+
+# Key=Value
+# Key为(a-zA-Z_0-9)且以(a-zA-Z_)开头
+# =后所有内容Trim后为Value
+CC = clang
+
+# \Macro{Param}
+# 设\OSDef为根据Os定义变量
+\"OSDef"{"Windows:OUT=doing.exe"}
+\"OSDef"{"Linux:OUT=doing"}
+
+target Name : DepName1 DepName2 
+    sh ${CC} -o ${OUT}
+end

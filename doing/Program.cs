@@ -5,293 +5,160 @@
  * Content: Program Source Files
  * Copyright (c) 2020-2021 GOSCPS 保留所有权利.
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+using CommandLine;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Threading;
 using System.IO;
-using System.Text.Json;
-using System.Text.Json.Serialization;
+using System.Reflection;
+using System.Text;
 
 namespace doing
 {
     /// <summary>
-    /// Doing主程序
+    /// 命令行参数
     /// </summary>
-    class Program
+    public class CommandLineOptions
+    {
+        /// <summary>
+        /// 定义的全局变量
+        /// </summary>
+        [Option('D', "Define", HelpText = "Define global environment variables.")]
+        public IList<string> Defines { get; set; }
+
+        /// <summary>
+        /// 要构建的Target
+        /// </summary>
+        [Value(0, HelpText = "What target you want to build.")]
+        public IList<string> AimTargets { get; set; }
+
+        /// <summary>
+        /// 文件名称
+        /// </summary>
+        [Option('F', "File", HelpText = "Set the doing file.Default is `build.doing`.", Default = "build.doing")]
+        public string FileName { get; set; }
+
+        /// <summary>
+        /// 定义的全局变量
+        /// </summary>
+        [Option('T', "Thread", HelpText = "Define max thread count you want to use.", Default = -1)]
+        public int ThreadCount { get; set; }
+    }
+
+
+    public class Program
     {
         /// <summary>
         /// Doing版本号
         /// </summary>
-        public static readonly string DoingVersion =
-            System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
+        public static string DoingVersion
+        {
+            get { return ((Assembly.GetEntryAssembly()).GetName()).Version.Major.ToString(); }
+        }
+
 
         /// <summary>
-        /// 所有异常Target的返回值
-        /// </summary>
-        public static ConcurrentStack<ValueTuple<TaskInfo, Exception>> 
-            ErrorReturn = new ConcurrentStack<ValueTuple<TaskInfo, Exception>>();
-
-        /// <summary>
-        /// 全局变量表
-        /// </summary>
-        public static ConcurrentDictionary<string, string> GolbalVariable
-            = new ConcurrentDictionary<string, string>();
-
-        /// <summary>
-        /// 全局Rule
-        /// </summary>
-        public static ConcurrentDictionary<string,Rule> GolbalRules = 
-            new ConcurrentDictionary<string, Rule>();
-
-        /// <summary>
-        /// 全局Target
-        /// </summary>
-        public static ConcurrentDictionary<string, Target> GolbalTargets = 
-            new ConcurrentDictionary<string, Target>();
-
-        /// <summary>
-        /// Main入口函数
+        /// Main
         /// </summary>
         /// <param name="args">命令行参数</param>
+        /// <returns>返回值</returns>
         static int Main(string[] args)
         {
             try
             {
-                Console.WriteLine("=====Doing======");
-                Console.WriteLine("=Made By GOSCPS=");
-                Console.WriteLine($"=Version{DoingVersion}=");
-                Console.WriteLine("================");
-
-                //线程池设置
-                //默认堆栈大小
-                ThreadPool.ThreadPool.StackSize = 0;
-                ThreadPool.ThreadPool.ThreadMaxCount = Environment.ProcessorCount;
-
-                HashSet<string> targets = new HashSet<string>();
+                Printer.Common("===== doing =====");
+                Printer.Common("== from GOSCPS ==");
+                Printer.Common($"===== ver {DoingVersion} =====");
+                Printer.Common("=================");
 
                 //解析命令行参数
-                for (int a = 0; a < args.Length; a++)
-                {
-                    if (args[a] == "-help")
-                    {
-                        if (args.Length >= 2)
-                        {
-                            Console.WriteLine("Warn:Param `-help` will ignore other params");
-                        }
-                        Console.WriteLine("The build system `doing` can build everything!");
-                        Console.WriteLine("Usgae:doing [options]");
-                        Console.WriteLine("options:");
-                        Console.WriteLine("\t-help Get Help");
-                        Console.WriteLine("\t-version Get doing version");
-                        Console.WriteLine("\t-S Key Value:define build key-value`");
-                        Console.WriteLine("\t-D[KEY]:define build variable");
-                        Console.WriteLine("\tno options:build default `build.doing`");
-                        return 0;
-                    }
-                    else if (args[a] == "-version")
-                    {
-                        Console.WriteLine("The build system `doing` can build everything!");
-                        if (args.Length >= 2)
-                        {
-                            Console.WriteLine("Warn:Param `-help` will ignore other params");
-                        }
-                        Console.WriteLine($"doing {DoingVersion} in {Environment.OSVersion.Platform}");
-                        return 0;
-                    }
+                bool parseArgumentsSuccess = true;
 
-                    //设置
-                    else if (args[a] == "-S")
+                var result = Parser.Default.ParseArguments<CommandLineOptions>(args)
+                    .WithParsed(options =>
                     {
-                        if ((a + 2) < args.Length)
+                        //-D Key Value
+                        if ((options.Defines.Count) % 2 != 0)
                         {
-                            GolbalVariable[args[a + 1]] = args[a + 2];
-                            a += 2;
+                            Printer.Error("Doing Error:Define need value.");
+                            parseArgumentsSuccess = false;
+                            return;
+                        }
+                        for (int a = 0; a < (options.Defines.Count / 2); a += 2)
+                        {
+                            Build.GlobalContext.GlobalEnvironmentVariables
+                            .Add(options.Defines[a], options.Defines[a + 1]);
+                        }
+
+                        //构建目标
+                        foreach (var target in options.AimTargets)
+                            Build.GlobalContext.AimTargetStrs.Add(target);
+
+                        //构建文件名称
+                        Build.GlobalContext.FileName = options.FileName;
+
+                        //设置线程数量
+                        if (options.ThreadCount > 0)
+                        {
+                            Build.GlobalContext.MaxThreadCount
+                            = options.ThreadCount;
                         }
                         else
                         {
-                            Console.Error.WriteLine("Error:options -S no right!");
-                            return -1;
+                            Build.GlobalContext.MaxThreadCount
+                            = Environment.ProcessorCount;
                         }
-                    }
 
-                    //定义
-                    else if (args[a] == "-D")
+                    })
+                    .WithNotParsed(errors =>
                     {
-                        if (++a < args.Length)
-                        {
-                            GolbalVariable[args[a]] = "";
-                        }
-                        else
-                        {
-                            Console.Error.WriteLine("Error:options -D no right!");
-                            return -1;
-                        }
-                    }
+                        parseArgumentsSuccess = false;
+                        Printer.Error("Doing Error:Parse arguments fail down or no arguments.");
+                    });
 
-                    else
-                    {
-                        targets.Add(args[a]);
-                    }
-                }
-
-                ThreadPool.ThreadPool.StartThreadPoolManager();
-                Console.WriteLine($"Will build targets:\n\t{string.Join("\n\t", targets)}");
-
-                var info = ReadDoingFile("build.doing");
-
-                if(info == null)
+                if (!parseArgumentsSuccess)
                 {
-                    Console.Error.WriteLine("Error:Parse Json File Error!");
                     return -1;
                 }
 
-                foreach (var r in info.Rules)
+                //默认构建default
+                if (Build.GlobalContext.AimTargetStrs.Count == 0)
                 {
-                    GolbalRules.GetOrAdd(r.Name, r);
+                    Printer.Warn("Doing Warn:Not found target in arguments.Default build `default`.");
+                    Build.GlobalContext.AimTargetStrs.Add("default");
                 }
 
-                foreach (var t in info.Targets)
+                //读取文件
+                string[] lines;
+                try
                 {
-                    GolbalTargets.GetOrAdd(t.Name, t);
+                    lines = File.ReadAllLines(Build.GlobalContext.FileName, Encoding.UTF8);
                 }
-
-                //执行
-                foreach (var a in targets)
+                catch (IOException err)
                 {
-                    if (GolbalTargets.TryGetValue(a, out Target value))
-                    {
-                        IRunner runner = new NativeRunner();
-                        runner.target = value;
-                        ThreadPool.ThreadPool.AddTarget(runner);
-                    }
-                    else
-                    {
-                        Console.WriteLine($"Error:Target `{a}` not found");
-                        ErrorReturn.Push((new TaskInfo()
-                        {
-                            ThreadName = "Main",
-                            Error = null,
-                            ThreadId = Thread.CurrentThread.ManagedThreadId,
-                            RunTarget = null
-                        }, new Exception($"Error:Target `{a}` not found")));
-                        break;
-                    }
+                    Printer.Error("Doing Error:IO Exception!");
+                    Printer.Error(err.ToString());
+                    return -1;
                 }
 
-                ThreadPool.ThreadPool threadPool = new ThreadPool.ThreadPool();
+                //加载自己
+                Expand.ExpandManager.LoadExpandFromFile(
+                    typeof(Program).Assembly.Location);
 
-                //检查是否全部完成
-                bool AllFinally = false;
-                while (true) {
-                    Thread.Sleep(200);
-                    if (AllFinally)
-                    {
-                        break;
-                    }
+                //编译
+                Build.GlobalContext.Source = lines;
+                Build.Interpreter.Interpreter.Run();
 
-                    AllFinally = true;
-                    foreach (var a in targets)
-                    {
-                        if (!threadPool[a])
-                        {
-                            AllFinally = false;
-                        }
-                    }
-                }
+                //构建
+                Build.BuildController.Build();
 
+                return 0;
             }
-            catch (Exception err)
+            catch (System.Exception err)
             {
-                Console.Error.WriteLine("Error:Build failure");
-                Console.Error.WriteLine(err.ToString());
-                return -1;
+                Printer.Error("Doing build failed.");
+                Printer.Error(err.ToString());
             }
-            finally
-            {
-                ThreadPool.ThreadPool.EndThreadPoolManager();
-
-                //打印错误堆栈
-                if(!ErrorReturn.IsEmpty)
-                {
-                    Console.Error.WriteLine("Error:Build fail down");
-                    foreach(var a in ErrorReturn)
-                    {
-                        Console.Error.WriteLine($"Error Build in {a.Item1.ThreadName}");
-                        if(a.Item2 != null)
-                        {
-                            Console.Error.WriteLine(a.Item2.ToString());
-                        }
-                        else
-                        {
-                            Console.Error.WriteLine("No Exception");
-                        }
-                    }
-                }
-            }
-            return 0;
-        }
-
-        /// <summary>
-        /// 读取文件
-        /// </summary>
-        /// <param name="name">文件名</param>
-        /// <returns>读取到的文件名称</returns>
-        public static BuildFile ReadDoingFile(string name)
-        {
-            BuildFile build =
-                JsonSerializer.Deserialize<BuildFile>(File.ReadAllText(name, System.Text.Encoding.UTF8));
-
-            List<Target> ts = new List<Target>();
-            List<Rule> rs = new List<Rule>();
-
-            ts.AddRange(build.Targets);
-            rs.AddRange(build.Rules);
-
-            if (build == null)
-            {
-                return null;
-            }
-            else
-            {
-                foreach (var file in build.Include)
-                {
-                    BuildFile include = ReadDoingFile(file);
-                    ts.AddRange(include.Targets);
-                    rs.AddRange(include.Rules);
-                }
-            }
-
-            //检查重复项
-            HashSet<Target> CheckTarget = new HashSet<Target>();
-            HashSet<Rule> CheckRule = new HashSet<Rule>();
-
-            foreach(var r in rs)
-            {
-                if (CheckRule.Contains(r))
-                {
-                    Console.Error.WriteLine($"Warn:repeat rule `{r.Name}` in file:{name}");
-                    return null;
-                }
-                else
-                {
-                    CheckRule.Add(r);
-                }
-            }
-            foreach (var t in ts)
-            {
-                if (CheckTarget.Contains(t))
-                {
-                    Console.Error.WriteLine($"Warn:repeat target `{t.Name}` in file:{name}");
-                    return null;
-                }
-                else
-                {
-                    CheckTarget.Add(t);
-                }
-            }
-
-            return build;
+            return -1;
         }
     }
 }
