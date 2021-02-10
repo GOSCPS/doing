@@ -22,6 +22,12 @@ namespace doing.Exception
             Position = pos;
         }
 
+        public GrammaticalException(string message, Build.Interpreter.LineInfo pos,System.Exception innerexception)
+            : base(message, innerexception)
+        {
+            Position = pos;
+        }
+
         public override string ToString()
         {
             StringBuilder stringBuilder = new StringBuilder();

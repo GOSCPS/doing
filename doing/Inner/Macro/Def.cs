@@ -5,54 +5,71 @@
  * Content: Def Source Files
  * Copyright (c) 2020-2021 GOSCPS 保留所有权利.
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace doing.Inner.Macro
 {
-    [Api.DoingExpand("doing-InnerExpand.Macro.Def", License = "GOSCPS", Version = 1)]
+    [Api.DoingExpand("doing-InnerExpand.Macro.If", License = "GOSCPS", Version = 1)]
     public class Def
     {
-        /// <summary>
-        /// Key = Value
-        /// </summary>
-        /// <returns></returns>
+
+
         [Api.Macro("Def")]
-        public bool MacroDef(string param, Build.Interpreter.Interpreter interpreter)
+        public bool DefMacro(string param, Build.Interpreter.Interpreter interpreter)
         {
             if (!param.Contains('='))
             {
-                Printer.Error("OsDef usage error.right is `OsName:Key=Value`");
+                Printer.Error("DefMacro Error:Usage error.");
                 return false;
+            }
+
+            string varName = param[0..param.IndexOf('=')];
+            string value = param[(param.IndexOf('=') + 1)..];
+
+            if(!MacroTool.GetStringFromString(value,interpreter,out value))
+            {
+                Printer.Error($"DefMacro Error:variable `{varName}` not defined");
+                return false;
+            }
+
+            if(interpreter != null)
+            {
+                if (interpreter.LocalVariables.ContainsKey(varName))
+                {
+                    Printer.Error($"DefMacro Error:variable {varName} defined.");
+                    return false;
+                }
+
+                interpreter.LocalVariables.Add(varName, value);
             }
             else
             {
-                string var_name = param[0..param.IndexOf('=')];
-                string var_value = param[(1 + param.IndexOf('='))..];
-                //全局变量
-                if (interpreter == null)
+                lock (Build.GlobalContext.GlobalContextLocker)
                 {
-                    lock (Build.GlobalContext.GlobalContextLocker)
-                        Build.GlobalContext.GlobalEnvironmentVariables.Add(var_name, var_value);
-                }
-                //局部变量
-                else
-                {
-                    interpreter.LocalVariables.Add(var_name, var_value);
+                    if (Build.GlobalContext.GlobalEnvironmentVariables.ContainsKey(varName))
+                    {
+                        Printer.Error($"DefMacro Error:variable {varName} defined.");
+                        return false;
+                    }
+                    Build.GlobalContext.GlobalEnvironmentVariables.Add(varName, value);
                 }
             }
 
             return true;
         }
 
-        /// <summary>
-        /// Key = Value
-        /// 全局
-        /// </summary>
-        /// <returns></returns>
-        [Api.Macro("GlobalDef")]
-        public bool GlobalMacroDef(string param, Build.Interpreter.Interpreter interpreter)
-        {
-            return MacroDef(param, null);
-        }
+
+
+
+
+
+
+
+
 
     }
 }

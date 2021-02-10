@@ -5,5 +5,39 @@ target "doing"
 \"Sh"{"cd doing ; dotnet build --configuration Release"}
 end
 
+target "install"
+
+end
+
+target "Test"
+\"Print"{"Hello doing"}
+\"PrintGood"{"Hello doing for green"}
+\"PrintWarn"{"Hello doing for warn"}
+\"PrintError"{"Hello doing for error"}
+\"Sh"{"echo \"Hello Sh\""}
+
+\"Def"{"DefTest=true"}
+\"Ifdef"{"DefTest"}
+\"Print"{"Hello If Macro"}
+endif
+
+\"Ifndef"{"INotDefined"}
+\"Print"{"Hello If Macro"}
+endif
+
+\"Ifeq"{"$DefTest==true"}
+\"Print"{"Hello If Macro"}
+endif
+
+\"Ifneq"{"$DefTest!=false"}
+\"Print"{"Hello If Macro"}
+endif
+
+\"StringAppendStr"{"DefTest+=\" is not false\""}
+\"Printv"{"$DefTest"}
+
+\"Error"{"Hello Error! If you build fail after see this.That show doing can work."}
+end
+
 target "default" : "doing"
 end

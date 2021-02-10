@@ -1,4 +1,8 @@
-\documentclass[UTF-8,twoside,a4paper,draft,titlepage]{ctexbook}
+\documentclass[UTF-8,twoside,a4paper,final,titlepage]{ctexbook}
+
+% Include some package usual use...
+\usepackage{xcolor}
+\usepackage{graphicx}
 
 % 调用 makeidx 宏包，用来处理索引
 \usepackage{makeidx} 
@@ -51,9 +55,28 @@
  \fancyhead[RO]{By Go\LaTeXe{}}
  \fancyhead[LE]{By Go\LaTeXe{}}
  
- % Include some package usual use...
- \usepackage{color}
- \usepackage{graphicx}
+ % 设置代码环境
+ \usepackage{listings}
+ \usepackage{keyval}
+ 
+ \lstset{
+ numbers=left,
+ tabsize=4,
+ frame=shadowbox,
+ escapeinside=``,
+ breakatwhitespace=false,
+ breaklines=true,
+ keepspaces=true,
+ showspaces=false,                
+ showstringspaces=false,
+ showtabs=false,
+ backgroundcolor=\color{white},   
+ commentstyle=\color{black},
+ keywordstyle=\color{blue},
+ numberstyle=\tiny\color{red},
+ stringstyle=\color{red},
+ basicstyle=\footnotesize,
+ }
  
  % Kepp safe
  % danger package call in last

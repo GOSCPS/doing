@@ -5,59 +5,95 @@
  * Content: Print Source Files
  * Copyright (c) 2020-2021 GOSCPS 保留所有权利.
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace doing.Inner.Macro
 {
+    /// <summary>
+    /// 打印机
+    /// </summary>
     [Api.DoingExpand("doing-InnerExpand.Macro.Print", License = "GOSCPS", Version = 1)]
     public class Print
     {
 
-        /// <summary>
-        /// 打印信息
-        /// </summary>
-        /// <returns></returns>
         [Api.Macro("Print")]
         public bool PrintMacro(string param, Build.Interpreter.Interpreter interpreter)
         {
-            param = param.Replace("{", "{{");
-            Printer.Common(param);
+            Printer.Common(param.Replace("{", "{{").Replace("}", "}}"));
             return true;
         }
 
-        /// <summary>
-        /// 打印信息
-        /// 然后退出
-        /// </summary>
-        /// <returns></returns>
-        [Api.Macro("ErrorPrint")]
-        public bool ErrorPrintMacro(string param, Build.Interpreter.Interpreter interpreter)
+
+        [Api.Macro("PrintError")]
+        public bool PrintErrorMacro(string param, Build.Interpreter.Interpreter interpreter)
         {
-            param = param.Replace("{", "{{");
-            Printer.Error(param);
+            Printer.Error(param.Replace("{", "{{").Replace("}", "}}"));
             return true;
         }
 
-        /// <summary>
-        /// 打印信息
-        /// </summary>
-        /// <returns></returns>
-        [Api.Macro("GoodPrint")]
-        public bool GoodPrintMacro(string param, Build.Interpreter.Interpreter interpreter)
+        [Api.Macro("PrintWarn")]
+        public bool PrintWarnMacro(string param, Build.Interpreter.Interpreter interpreter)
         {
-            param = param.Replace("{", "{{");
-            Printer.Good(param);
+            Printer.Warn(param.Replace("{", "{{").Replace("}", "}}"));
             return true;
         }
 
-        /// <summary>
-        /// 打印信息
-        /// </summary>
-        /// <returns></returns>
-        [Api.Macro("WarnPrint")]
-        public bool WarnPrintMacro(string param, Build.Interpreter.Interpreter interpreter)
+        [Api.Macro("PrintGood")]
+        public bool PrintGoodMacro(string param, Build.Interpreter.Interpreter interpreter)
         {
-            param = param.Replace("{", "{{");
-            Printer.Warn(param);
+            Printer.Good(param.Replace("{", "{{").Replace("}", "}}"));
+            return true;
+        }
+
+        [Api.Macro("Printv")]
+        public bool PrintvMacro(string param, Build.Interpreter.Interpreter interpreter)
+        {
+            if(!MacroTool.GetStringFromString(param,interpreter,out string result))
+            {
+                Printer.Error($"PrintvMacro Error:Can't found var `{param}`");
+                return false;
+            }
+            Printer.Common(result.Replace("{", "{{").Replace("}", "}}"));
+            return true;
+        }
+
+        [Api.Macro("PrintvError")]
+        public bool PrintvErrorMacro(string param, Build.Interpreter.Interpreter interpreter)
+        {
+            if (!MacroTool.GetStringFromString(param, interpreter, out string result))
+            {
+                Printer.Error($"PrintvErrorMacro Error:Can't found var `{param}`");
+                return false;
+            }
+            Printer.Error(result.Replace("{", "{{").Replace("}", "}}"));
+            return true;
+        }
+
+        [Api.Macro("PrintvWarn")]
+        public bool PrintvWarnMacro(string param, Build.Interpreter.Interpreter interpreter)
+        {
+            if (!MacroTool.GetStringFromString(param, interpreter, out string result))
+            {
+                Printer.Error($"PrintvWarnMacro Error:Can't found var `{param}`");
+                return false;
+            }
+            Printer.Warn(result.Replace("{", "{{").Replace("}", "}}"));
+            return true;
+        }
+
+        [Api.Macro("PrintvGood")]
+        public bool PrintvGoodMacro(string param, Build.Interpreter.Interpreter interpreter)
+        {
+            if (!MacroTool.GetStringFromString(param, interpreter, out string result))
+            {
+                Printer.Error($"PrintvGoodMacro Error:Can't found var `{param}`");
+                return false;
+            }
+            Printer.Good(result.Replace("{", "{{").Replace("}", "}}"));
             return true;
         }
     }

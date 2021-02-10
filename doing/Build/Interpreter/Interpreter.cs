@@ -327,75 +327,93 @@ namespace doing.Build.Interpreter
         /// <param name="t"></param>
         public void RunTarget(Target t)
         {
-            Source = t;
-            for (; ProgramCounter < Source.Codes.Length; ProgramCounter++)
+            try
             {
-                //预处理后的源文件
-                //No include & using
-                //No empty line
-                Tool.StringIterator stringIterator =
-                    new Tool.StringIterator(Source.Codes[ProgramCounter].Item1);
-
-                //宏调用
-                if (stringIterator.Current == '\\')
+                Source = t;
+                for (; ProgramCounter < Source.Codes.Length; ProgramCounter++)
                 {
-                    stringIterator.Next();
-                    //\"MacroName"{"Macro Param"}
-                    //读取宏名
-                    string macroName = stringIterator.ReadNextString();
-                    if (macroName == null)
-                        throw new
-                            Exception.GrammaticalException
-                            ("Error macro name", Source.Codes[ProgramCounter].Item2);
+                    //预处理后的源文件
+                    //No include & using
+                    //No empty line
+                    Tool.StringIterator stringIterator =
+                        new Tool.StringIterator(Source.Codes[ProgramCounter].Item1);
 
-                    string macroParam;
-                    //{
-                    if (stringIterator.CanRead() && stringIterator.Current == '{')
+                    //宏调用
+                    if (stringIterator.Current == '\\')
                     {
                         stringIterator.Next();
-                        //读取参数
-                        macroParam = stringIterator.ReadNextString();
-
-                        if (macroParam == null)
-                            throw new
-                            Exception.GrammaticalException
-                            ("Error macro param", Source.Codes[ProgramCounter].Item2);
-
-                        //}
-                        if (!(stringIterator.CanRead() && stringIterator.Current == '}'))
+                        //\"MacroName"{"Macro Param"}
+                        //读取宏名
+                        string macroName = stringIterator.ReadNextString();
+                        if (macroName == null)
                             throw new
                                 Exception.GrammaticalException
-                                ("Miss token `}`", Source.Codes[ProgramCounter].Item2);
+                                ("Error macro name", Source.Codes[ProgramCounter].Item2);
 
-                        stringIterator.Next();
-                        stringIterator.SkipSpace();
+                        string macroParam;
+                        //{
+                        if (stringIterator.CanRead() && stringIterator.Current == '{')
+                        {
+                            stringIterator.Next();
+                            //读取参数
+                            macroParam = stringIterator.ReadNextString();
+
+                            if (macroParam == null)
+                                throw new
+                                Exception.GrammaticalException
+                                ("Error macro param", Source.Codes[ProgramCounter].Item2);
+
+                            //}
+                            if (!(stringIterator.CanRead() && stringIterator.Current == '}'))
+                                throw new
+                                    Exception.GrammaticalException
+                                    ("Miss token `}`", Source.Codes[ProgramCounter].Item2);
+
+                            stringIterator.Next();
+                            stringIterator.SkipSpace();
+                        }
+                        else throw new
+                                Exception.GrammaticalException
+                                ("Miss token `{`", Source.Codes[ProgramCounter].Item2);
+
+                        //末尾有其他字符
+                        if (stringIterator.CanRead())
+                            throw new
+                                Exception.GrammaticalException
+                                ("Remaining characters after macro", Source.Codes[ProgramCounter].Item2);
+
+                        //当场调用
+                        //局部调用
+                        var result = MacroManager.CallMacro(macroName, macroParam, this);
+
+                        //执行错误
+                        if (result == null || result == false)
+                            throw new
+                                Exception.GrammaticalException
+                                ("Macro run return error", Source.Codes[ProgramCounter].Item2);
+
+                        continue;
                     }
+                    //只支持调用宏
                     else throw new
                             Exception.GrammaticalException
-                            ("Miss token `{`", Source.Codes[ProgramCounter].Item2);
-
-                    //末尾有其他字符
-                    if (stringIterator.CanRead())
-                        throw new
-                            Exception.GrammaticalException
-                            ("Remaining characters after macro", Source.Codes[ProgramCounter].Item2);
-
-                    //当场调用
-                    //局部调用
-                    var result = MacroManager.CallMacro(macroName, macroParam, this);
-
-                    //执行错误
-                    if (result == null || result == false)
-                        throw new
-                            Exception.GrammaticalException
-                            ("Macro run return error", Source.Codes[ProgramCounter].Item2);
-
-                    continue;
+                            ("Unknown macro call", Source.Codes[ProgramCounter].Item2);
                 }
-                //只支持调用宏
-                else throw new
+            }
+            catch (Exception.GrammaticalException err)
+            {
+                throw;
+            }
+            catch (System.Exception err)
+            {
+                if (ProgramCounter < Source.Codes.Length)
+                    throw new
                         Exception.GrammaticalException
-                        ("Unknown macro call", Source.Codes[ProgramCounter].Item2);
+                        ("Unknown Exception!", Source.Codes[ProgramCounter].Item2, err);
+                else
+                    throw new
+                        Exception.GrammaticalException
+                        ("Unknown Exception!", new LineInfo() { FileName = "Unknown", Line = -1 }, err);
             }
         }
     }

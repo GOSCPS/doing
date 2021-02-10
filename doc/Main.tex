@@ -6,6 +6,72 @@ Doing 是由 GOSCPS 所研发的一种新型构建系统。这套系统旨在实
 
 \subsection{Doing 命令行使用}
 
+doing使用C\#编写，因此通常可以在命令行直接键入doing.exe来使用。doing有两条基本命令:\newline{}
+\begin{lstlisting}
+	--help 			这一条用来显示帮助
+	--version 		这一条用来显示版本
+\end{lstlisting}
+截至doing 1.0.0，doing提供了以下命令行设置：\newline{}
+\begin{lstlisting}
+	-D, --Define    Define global environment variables.
+	
+	-F, --File      (Default: build.doing) Set the doing file.Default is `build.doing`.
+	
+	-T, --Thread    (Default: -1) Define max thread count you want to use.
+	
+	--help          Display this help screen.
+	
+	--version       Display version information.
+	
+	value pos. 0    What target you want to build.
+\end{lstlisting}
+如果提供翻译，那么就是：\newline{}
+\begin{lstlisting}
+	-D, --Define    用法 -D Key1 Value1 Key2 Value2
+					用来定义全局环境变量
+					Key和Value必须成对出现
+	
+	-F, --File      设置要构建的.doing文件
+					如果没设置，默认使用build.doing
+	
+	-T, --Thread    设置要使用的线程数量
+					默认-1
+					如果小于等于0，则使用C#的(Environment.ProcessorCount)
+					官方对此说法的原文是：
+					The 32-bit signed integer that specifies the number of processors on the current machine. 
+					There is no default. If the current machine contains 
+					multiple processor groups,
+					this property returns the number of 
+					logical processors that are available for use by the common language runtime (CLR).
+	
+	--help          显示帮助页面
+	
+	--version       显示版本号
+	
+	value pos. 0  	你要构建的目标
+					需要放在所有选项之前
+\end{lstlisting}
+下面是一个例子:
+\begin{lstlisting}
+$ doing.exe install -D CC clang -F build.doing -T 2
+\end{lstlisting}
+意为：在build.doing文件构建install目标，使用clang作为变量CC，最大使用两个线程。
+
+
+\subsection{Doing 的安装}
+Doing官方已经提供了二进制分发：因其使用C\#编写，所以您可以在dotnet支持的平台运行它。不过GOSCPS官方支持的平台为：Windows10，Linux和MacOS。
+\newline{}
+如果你需要自己构建，也很简单。
+\begin{lstlisting}
+$ cd You Work Space
+$ git clone https://github.com/GOSCPS/doing
+$ cd doing/doing
+$ dotnet build --configuration Release
+$ cd ..
+$ .\doing\bin\Release\net5.0\doing.exe install -D InstallPath 你想安装的目录
+\end{lstlisting}
+之后就能完成安装了。
+
 
 
 
