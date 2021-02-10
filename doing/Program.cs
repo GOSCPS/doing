@@ -144,6 +144,11 @@ namespace doing
                 Expand.ExpandManager.LoadExpandFromFile(
                     typeof(Program).Assembly.Location);
 
+                //添加操作系统定义
+                Build.GlobalContext.GlobalEnvironmentVariables.Add(
+                    "__OS__"
+                    , Environment.OSVersion.Platform.ToString());
+
                 //编译
                 Build.GlobalContext.Source = lines;
                 Build.Interpreter.Interpreter.Run();

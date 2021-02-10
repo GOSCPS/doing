@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 
 namespace doing.Inner.Macro
 {
-    [Api.DoingExpand("doing-InnerExpand.Macro.If", License = "GOSCPS", Version = 1)]
+    [Api.DoingExpand("doing-InnerExpand.Macro.Def", License = "GOSCPS", Version = 1)]
     public class Def
     {
 
@@ -62,7 +62,33 @@ namespace doing.Inner.Macro
             return true;
         }
 
+        [Api.Macro("Undef")]
+        public bool UndefMacro(string param, Build.Interpreter.Interpreter interpreter)
+        {
+            if (interpreter != null)
+            {
+                if (interpreter.LocalVariables.ContainsKey(param))
+                {
+                    interpreter.LocalVariables.Remove(param);
+                    return true;
+                }
+            }
+            else
+            {
+                lock (Build.GlobalContext.GlobalContextLocker)
+                {
+                    if (Build.GlobalContext.GlobalEnvironmentVariables.ContainsKey(param))
+                    {
+                        Build.GlobalContext.GlobalEnvironmentVariables.Remove(param);
+                        return true;
+                    }
+                   
+                }
+            }
+            Printer.Error($"UndefMacro Error:can't find macro `{param}`");
 
+            return false;
+        }
 
 
 
