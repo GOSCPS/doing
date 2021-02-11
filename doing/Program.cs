@@ -42,6 +42,13 @@ namespace doing
         /// </summary>
         [Option('T', "Thread", HelpText = "Define max thread count you want to use.", Default = -1)]
         public int ThreadCount { get; set; }
+
+        /// <summary>
+        /// 定义运行pwsh是否带-NoProfile
+        /// </summary>
+        [Option('P', "NoPwshProfile", 
+            HelpText = "If this is true.Set powershell options `-NoProfile`",Default = "true")]
+        public string NoPwshProfile { get; set; }
     }
 
 
@@ -106,6 +113,17 @@ namespace doing
                         {
                             Build.GlobalContext.MaxThreadCount
                             = Environment.ProcessorCount;
+                        }
+
+                        //设置pwsh -NoProfile
+                        if (bool.TryParse(options.NoPwshProfile, out bool result))
+                        {
+                            if(result)
+                                Inner.Macro.Sh.PwshOpions += " -NoProfile";
+                        }
+                        else
+                        {
+                            Printer.Warn("Doing Warn:Parse options NoPwshProfile error");
                         }
 
                     })

@@ -17,13 +17,15 @@ namespace doing.Inner.Macro
     [Api.DoingExpand("doing-InnerExpand.Macro.Sh", License = "GOSCPS", Version = 1)]
     public class Sh
     {
+        public static string PwshOpions = "-NoLogo ";
+
         public static (string, string) GetCommandLine(string param)
         {
             param = param.Replace("\"", "\\\"");
             if (Environment.OSVersion.Platform == PlatformID.Win32NT)
-                return ("pwsh.exe", $" /c \"{param}\"");
+                return ("pwsh.exe", $"{PwshOpions} -Command \"{{{param}}}\"");
             else
-                return ("/bin/sh", $" -c \"{param}\"");
+                return ("pwsh", $"{PwshOpions} -Command \"{{{param}}}\"");
         }
 
         [Api.Macro("ShWithVar")]
@@ -64,7 +66,9 @@ namespace doing.Inner.Macro
                 }
 
             //Start
-            Printer.Common($"{cmd.Item1.Replace("{", "{{")} {cmd.Item2.Replace("{", "{{")}");
+            string ProcStr = cmd.Item1.Replace("{", "{{").Replace("}", "}}");
+            string ArgsStr = cmd.Item2.Replace("{", "{{").Replace("}", "}}");
+            Printer.Common($"{ProcStr} {ArgsStr}");
 
             proc.Start();
             proc.WaitForExit();

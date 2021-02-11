@@ -153,6 +153,13 @@ end
 
 # 通常情况下，如果变量重名
 # 那么局部变量会优先于全局变量被使用
+
+# 如果一行的末尾为\
+# 那么会把第二行链接过来
+# \"Print"{"\
+# Hello World"}
+# 等价于
+# \"Print"{"Hello World"}
 \end{lstlisting}
 
 

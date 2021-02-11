@@ -47,6 +47,24 @@ namespace doing.Build.Interpreter
                 {
                     continue;
                 }
+                // 末尾为\
+                //链接到第二行
+                else if(ThisLineStringIterator.Source[ThisLineStringIterator.Source.Length-1] 
+                    == '\\')
+                {
+                    //抵达末尾
+                    if((ptr+1) >= lines.Length)
+                    {
+                        throw new Exception.PretreatmentException($"Doing Error:link line " +
+                                $"but second line was null in {fileName} at {ptr + 1}");
+                    }
+                    //链接
+                    else
+                    {
+                        lines[ptr + 1] = lines[ptr][0..lines[ptr].LastIndexOf('\\')] + lines[ptr + 1];
+                        continue;
+                    }
+                }
                 else
                 {
                     string keyword = ThisLineStringIterator.ReadNextWord();
