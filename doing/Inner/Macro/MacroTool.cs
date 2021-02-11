@@ -27,7 +27,7 @@ namespace doing.Inner.Macro
         /// 获取失败返回null
         /// </returns>
         public static bool GetStringFromString(
-            string param, Build.Interpreter.Interpreter interpreter, out string result)
+            in string param, Build.Interpreter.Interpreter interpreter, out string result)
         {
             if (param == null || param.Length == 0)
             {
@@ -67,6 +67,32 @@ namespace doing.Inner.Macro
             //\$开头
             //视为转义
             else if (param.StartsWith("\\$"))
+            {
+                result = param[1..];
+                return true;
+            }
+            //以"开头
+            //视为字符串
+            else if (param.StartsWith('"'))
+            {
+                Tool.StringIterator stringIterator = new Tool.StringIterator(param);
+                string strresult = stringIterator.ReadNextString();
+
+                if(strresult == null)
+                {
+                    //Printer.Error($"String `{param.Replace("{","{{")}` parse error");
+                    result = "";
+                    return false;
+                }
+                else
+                {
+                    result = strresult;
+                    return true;
+                }
+            }
+            //以\"开头
+            //视为转义
+            else if (param.StartsWith("\\\""))
             {
                 result = param[1..];
                 return true;

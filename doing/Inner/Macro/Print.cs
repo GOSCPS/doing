@@ -54,7 +54,7 @@ namespace doing.Inner.Macro
         {
             if(!MacroTool.GetStringFromString(param,interpreter,out string result))
             {
-                Printer.Error($"PrintvMacro Error:Can't found var `{param}`");
+                Printer.Error($"PrintvMacro Error:Can't found parse `{param.Replace("{", "{{")}`");
                 return false;
             }
             Printer.Common(result.Replace("{", "{{").Replace("}", "}}"));
@@ -66,7 +66,7 @@ namespace doing.Inner.Macro
         {
             if (!MacroTool.GetStringFromString(param, interpreter, out string result))
             {
-                Printer.Error($"PrintvErrorMacro Error:Can't found var `{param}`");
+                Printer.Error($"PrintvErrorMacro Error:Can't found parse `{param.Replace("{", "{{")}`");
                 return false;
             }
             Printer.Error(result.Replace("{", "{{").Replace("}", "}}"));
@@ -78,7 +78,7 @@ namespace doing.Inner.Macro
         {
             if (!MacroTool.GetStringFromString(param, interpreter, out string result))
             {
-                Printer.Error($"PrintvWarnMacro Error:Can't found var `{param}`");
+                Printer.Error($"PrintvWarnMacro Error:Can't found parse `{param.Replace("{", "{{")}`");
                 return false;
             }
             Printer.Warn(result.Replace("{", "{{").Replace("}", "}}"));
@@ -90,7 +90,7 @@ namespace doing.Inner.Macro
         {
             if (!MacroTool.GetStringFromString(param, interpreter, out string result))
             {
-                Printer.Error($"PrintvGoodMacro Error:Can't found var `{param}`");
+                Printer.Error($"PrintvGoodMacro Error:Can't found parse `{param.Replace("{", "{{")}`");
                 return false;
             }
             Printer.Good(result.Replace("{", "{{").Replace("}", "}}"));

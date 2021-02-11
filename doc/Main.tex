@@ -27,7 +27,7 @@ doing使用C\#编写，因此通常可以在命令行直接键入doing.exe来使
 \end{lstlisting}
 如果提供翻译，那么就是：\newline{}
 \begin{lstlisting}
-	-D, --Define    用法 -D Key1 Value1 Key2 Value2
+	-D, --Define    用法 -D Key1 Value1 Key2 Value2 ...
 					用来定义全局环境变量
 					Key和Value必须成对出现
 	
@@ -50,12 +50,13 @@ doing使用C\#编写，因此通常可以在命令行直接键入doing.exe来使
 	
 	value pos. 0  	你要构建的目标
 					需要放在所有选项之前
+					支持构建多个选项
 \end{lstlisting}
 下面是一个例子:
 \begin{lstlisting}
-$ doing.exe install -D CC clang -F build.doing -T 2
+$ doing.exe install update -D CC clang CXX clang++ -F build.doing -T 2
 \end{lstlisting}
-意为：在build.doing文件构建install目标，使用clang作为变量CC，最大使用两个线程。
+意为：在build.doing文件构建install和update目标，设置全局变量CC为clang，设置全局变量CXX为clang++，最大使用两个线程。
 
 
 \subsection{Doing 的安装}
@@ -72,6 +73,315 @@ $ .\doing\bin\Release\net5.0\doing.exe install -D InstallPath 你想安装的目
 \end{lstlisting}
 之后就能完成安装了。
 
+\subsection{Doing Start}
+Doing在语法上借鉴了makefile和\LaTeX{}，这使得doing变得容易扩展而且容易编写。doing文件均以.doing作为结尾。
+下面是一个doing版本的Hello World。
+\newline{}
+\begin{lstlisting}
+target "default"
+\"Print"{"Hello World"}
+end
+\end{lstlisting}
+保存到build.doing。键入doing(.exe)即可运行。doing会自己找到文件并执行。Well，让我们解析一下这个简短的示例。
+\newline{}
+
+第一行:
+\begin{lstlisting}
+target "default"
+\end{lstlisting}
+定义了一个名为default的目标。目标名称需要双引号""括起来，虽然没有做强制要求，但建议使用符合正则表达式[a-zA-Z0-9\_]+的名称。
+\newline{}
+
+让我们看看第二行：
+\begin{lstlisting}
+\"Print"{"Hello World"}
+\end{lstlisting}
+这一行调用名为Print的宏。并把"Hello World"作为参数传入。doing的执行基本单位即是宏。注意宏的名称和参数也需要用双引号括住。
+
+最后一行:
+\begin{lstlisting}
+end
+\end{lstlisting}
+与第一行对应。代表一个target到此为止。
+\newline{}
+\newline{}
+
+现在让我们看看doing的正式语法定义:
+\label{DoingBase}
+\begin{lstlisting}
+# doing正式语法定义
+#以#开头的都是注释
+#	会被忽略
+
+# include会把include的文件原样插入到include的地点
+include "File Name.doing"
+
+# using会加载doing扩展
+# doing扩展都位于doing可执行文件同级目录下的Expand目录
+using "Expand Name"
+
+# 定义一个目标
+# target "目标的名称"
+# 如果目标名称后接 `:` 字符，则字符`:`后的字符串组均视为这个目标的依赖
+# 如果没有依赖可以写作:Target "Target Name"
+# 构建目标时，doing会确保构建前依赖已经构建过
+target "Target Name" : "Dep Target Name1" "Dep Target Name2" "Dep Target Name3"
+
+# 宏
+# \"宏名"{"宏参数"}
+\"Macro Name"{"Macro Param"}
+
+#结束target
+#target不能嵌套
+end
+
+# 如果有宏不属于任何target
+# 则会在解析语法时立刻执行
+
+# 字符串解析（即用双引号括起来的字符串） 
+# 都支持转义
+# \n = 换行
+# \\ = \
+# \' = '
+# \" = "
+# \uXXXXX = 将XXXXX视作Unicode编码转义
+# \t = tab
+
+# doing内置有一个变量系统
+# 适用于整个构建周期的，称为全局变量
+# 适用于单个target的，称为局部变量
+
+# 通常情况下，如果变量重名
+# 那么局部变量会优先于全局变量被使用
+\end{lstlisting}
+
+
+\chapter{Doing 内建宏文档}
+doing提供了一些内建宏，这些宏不需要using也可以使用。Doing内建了一个GetStringFromString();Doing的内置宏大用特用了这个函数，有必要学习一下：\newline{}
+\label{GetStringFromStrin}
+\begin{lstlisting}
+输入一个字符串：
+	如果是$开头，则去掉开头的$，然后把字符串视作变量名称。寻找变量然后返回。局部变量优先。
+	
+	如果是\$开头，则去掉开头的\，然后返回。
+	
+	如果是"开头，则视作字符串，解析转义返回，解析方式同`\ref{DoingBase}`中的字符串解析。
+	
+	如果是\"开头，则去掉开头的\，然后返回。
+	
+	如果不属于以上任何情况，则直接返回。
+\end{lstlisting}
+
+
+\section{Doing Control}
+这个宏包提供了一些控制语句。
+
+\subsection{Break}
+这个宏会把参数打印。然后结束当前target的执行。
+
+\subsection{Error}
+这个宏会把参数用红色打印到Error。然后以错误的方式结束当前target的执行。这会导致构建失败。
+
+\subsection{Pass}
+这个宏什么都不干，忽略参数。
+
+\subsection{Backup}
+这个宏会把参数视作变量名称，并备份，然后移除原来的变量。如果要备份的变量重名，局部变量优先。
+
+\subsection{Restore}
+这个宏会把参数视作已经被备份的变量的名称，会恢复其变量，然后移除其备份。如果要恢复的变量重名，局部变量优先。
+
+\subsection{Global}
+这个宏会模拟不在target内执行宏。用法为：
+\begin{lstlisting}
+\"Global"{"Macro Name:Macro Param"}
+\end{lstlisting}
+如果有多个`:`，则分界为最左边那一个。
+简单的例子：
+\begin{lstlisting}
+target "default"
+\"Global"{"Def:A=B"}
+end
+
+# 全局变量A，值为B
+\end{lstlisting}
+
+\section{Doing Def}
+
+\subsection{Def}
+定义一个变量等于一个值。这个宏的用法如下
+\begin{lstlisting}
+\"Def"{"Var Name = Value"}
+\end{lstlisting}
+Var Name和Value都会在Trim后被使用。Value还会被丢入\ref{GetStringFromStrin}解析。如果Def位于target内，则变量会被定义为局部变量，否则为全局变量。
+\newline{}
+简短的示例：
+\begin{lstlisting}
+\"Def"{"ImAVar = A"}
+\"Def"{"ImA = $ImAVar"}
+\"Def"{"ImHW = \"Hello World\""}
+
+#ImAVar=A
+#ImA=A
+#ImHW=Hello World
+\end{lstlisting}
+
+\subsection{Undef}
+把参数作为变量名称，然后取消定义这个变量。如果Undef位于target内，则会取消为局部变量，否则为全局变量。
+取消定义的变量可以再次被定义。
+
+
+\section{Doing If}
+Doing内置提供了一组逻辑处理宏。\textbf{这些宏只能在target内使用。}
+
+\subsection{Ifdef}
+将宏参数作为变量名称。然后寻离宏最近的endif，找如果局部变量或者全局变量\textbf{有}定义这个变量，则把endif替换为Pass宏。否则，把endif和这个宏到endif之间的所有宏都替换到Pass。
+\newline{}
+简单的例子：
+\begin{lstlisting}
+target "default"
+\"Def"{"A=B"}
+
+\"Ifdef"{"A"}
+\"Print"{"Hello World"}
+endif
+
+end
+# 将会输出Hello World
+\end{lstlisting}
+
+\subsection{Ifndef}
+Ifdef的孪生兄弟，作用相反。将宏参数作为变量名称。然后寻离宏最近的endif，找如果局部变量或者全局变量\textbf{没有}定义这个变量，则把endif替换为Pass宏。否则，把endif和这个宏到endif之间的所有宏都替换到Pass。
+\newline{}
+简单的例子：
+\begin{lstlisting}
+target "default"
+
+\"Ifndef"{"A"}
+\"Print"{"Hello World"}
+endif
+
+end
+# 将会输出Hello World
+\end{lstlisting}
+
+\subsection{Ifeq}
+判断两个值是否相等，如果相等，则寻离宏最近的endif，把endif替换为Pass宏。否则，把endif和这个宏到endif之间的所有宏都替换到Pass。用法形如:
+\begin{lstlisting}
+\"Ifeq"{"Left==Right"}
+\end{lstlisting}
+Left和Right都会被Trim后丢尽\ref{GetStringFromStrin}。之后做比较。
+
+简单的例子:
+\begin{lstlisting}
+target "default"
+
+\"Def"{"A=B"}
+
+\"Ifeq"{"$A==B"}
+\"Print"{"Hello World"}
+endif
+
+end
+# 将会输出Hello World
+\end{lstlisting}
+
+\subsection{Ifneq}
+Ifeq的孪生兄弟，作用相反。判断两个值是否不相等，如果不相等，则寻离宏最近的endif，把endif替换为Pass宏。否则，把endif和这个宏到endif之间的所有宏都替换到Pass。用法形如:
+\begin{lstlisting}
+\"Ifneq"{"Left!=Right"}
+\end{lstlisting}
+Left和Right都会被Trim后丢尽\ref{GetStringFromStrin}。之后做比较。
+
+简单的例子:
+\begin{lstlisting}
+target "default"
+	
+\"Def"{"A=B"}
+	
+\"Ifneq"{"$A!=A"}
+\"Print"{"Hello World"}
+endif
+	
+end
+# 将会输出Hello World
+\end{lstlisting}
+
+
+\section{Doing Sh}
+Doing Sh提供了一些执行Shell用的代码
+
+\subsection{Sh}
+这个宏会把参数当作shell命令执行。
+\begin{lstlisting}
+\"Sh"{"echo \"Hello World\""}
+# 在Windows上会执行：	pwsh.exe /c "echo \"Hello World\""
+# 在unix上会执行：	/bin/sh -d "echo \"Hello World\""
+\end{lstlisting}
+
+\subsection{ShWithVar}
+同Sh，但是会把全局变量和局部变量都添加到shell运行环境。
+
+\section{Doing String}
+Doing String提供了一些宏用来操作字符串。  
+
+\subsection{StringAppend}
+追加字符串：
+\begin{lstlisting}
+\"StringAppend"{"Var Name+=Value"}
+\end{lstlisting}
+Var Name和Value都会被Trim。Var Name会被视作要追加字符串的变量名称。Value会被送进\ref{GetStringFromStrin}。
+之后Var Name会被追加Value。如果局部变量和全局变量都有Var Name，则局部变量优先。
+
+
+\section{Doing Os}
+Doing Os提供了一些宏用来和操作系统交互。
+
+\subsection{AddToPath}
+这个宏接受一个字符串，会被送入\ref{GetStringFromStrin}。然后把结果追加到系统的Path环境变量。
+
+\section{Doing Print}
+提供了一些用来打印的宏：
+
+\begin{lstlisting}
+Print系列：
+Print
+PrintWarn
+PrintError
+PrintGood
+
+Printv系列：
+Print
+PrintvWarn
+PrintvError
+PrintvGood
+\end{lstlisting}
+Warn会打印黄色字符并输出到StdErr。\newline{}
+Error会打印红色字符并输出到StdErr。\newline{}
+Good会打印黄色字符并输出到StdOut。\newline{}
+
+Print系列会直接打印参数。Printv则会把参数送到\ref{GetStringFromStrin}处理之后再打印。
+
+
+\chapter{Doing 编写宏}
+要在Doing编写宏很简单。\newline{}
+下面是小小的例子：
+\begin{lstlisting}[language=C++]
+/// <summary>
+/// 什么都不干的Pass宏
+/// </summary>
+/// <param name="param">宏参数</param>
+/// <param name="interpreter">解释器</param>
+/// <returns>
+/// 如果执行成功返回true，否则false。
+/// </returns>
+[Api.Macro("Pass")]
+public bool PassMacro(string param, Build.Interpreter.Interpreter interpreter)
+{
+	return true;
+}
+\end{lstlisting}
+TODO。
 
 
 

@@ -24,8 +24,7 @@ namespace doing.Inner.Macro
         [Api.Macro("Break")]
         public bool BreakMacro(string param, Build.Interpreter.Interpreter interpreter)
         {
-            param = param.Replace("{", "{{").Replace("}", "}}");
-            Printer.Common(param);
+            Printer.Common(param.Replace("{", "{{").Replace("}", "}}"));
             //修改程序计数器
             //到末尾
             interpreter.ProgramCounter
@@ -42,8 +41,7 @@ namespace doing.Inner.Macro
         [Api.Macro("Error")]
         public bool ErrorMacro(string param, Build.Interpreter.Interpreter interpreter)
         {
-            param = param.Replace("{", "{{").Replace("}","}}");
-            Printer.Error(param);
+            Printer.Error(param.Replace("{", "{{").Replace("}", "}}"));
             return false;
         }
 
@@ -57,6 +55,32 @@ namespace doing.Inner.Macro
         public bool PassMacro(string param, Build.Interpreter.Interpreter interpreter)
         {
             return true;
+        }
+
+        //模拟全局
+        [Api.Macro("Global")]
+        public bool GlobalMacro(string param, Build.Interpreter.Interpreter interpreter)
+        {
+            string callName;
+            string callParam;
+            bool? result;
+
+            if (!param.Contains(":"))
+            {
+                Printer.Error("GlobalMacro Error:Usage error.");
+                return false;
+            }
+
+            callName = param[0..param.IndexOf(':')];
+            callParam = param[(param.IndexOf(':') + 1)..];
+
+            result = Build.MacroManager.CallMacro(callName, callParam, null);
+            if (result == null)
+            {
+                Printer.Error($"GlobalMacro Error:Can't process the macro `{callName}`");
+                return false;
+            }
+            else return result.Value;
         }
 
         /// <summary>
@@ -154,6 +178,10 @@ namespace doing.Inner.Macro
 
             return false;
         }
+
+
+
+
 
     }
 }

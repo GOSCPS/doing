@@ -90,7 +90,7 @@ namespace doing.Build.Interpreter
                     else if (keyword == "using")
                     {
                         //using "expand"
-                        //expand位于doing.exe同级的expand目录下
+                        //Expand位于doing.exe同级的Expand目录下
                         ThisLineStringIterator.SkipSpace();
                         keyword = ThisLineStringIterator.ReadNextString();
 
@@ -110,14 +110,14 @@ namespace doing.Build.Interpreter
                             //载入插件
                             if (!File.Exists(
                                  AppDomain.CurrentDomain.SetupInformation.ApplicationBase
-                                 + "expand/" + keyword))
+                                 + "Expand/" + keyword))
                                 throw new
                                     Exception.PretreatmentException
-                                    ("Doing Error:using expand not found");
+                                    ($"Doing Error:using expand `{keyword}` not found");
 
                             Expand.ExpandManager.LoadExpandFromFile(
                                 AppDomain.CurrentDomain.SetupInformation.ApplicationBase
-                                 + "expand/" + keyword);
+                                 + "Expand/" + keyword);
                             continue;
                         }
                     }

@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace doing.Inner.Macro
@@ -36,6 +37,14 @@ namespace doing.Inner.Macro
                 return false;
             }
 
+            //检查变量名称是否合法
+            /*if (!Regex.IsMatch(varName, "[a-zA-Z]+[a-zA-Z0-9_]+"))
+            {
+                Printer.Error($"DefMacro Error:The variable name `{varName.Replace("{","{{")}` not right.");
+                Printer.Error("DefMacro Info:The variable name need obey regex ``");
+                return false;
+            }*/
+
             if(interpreter != null)
             {
                 if (interpreter.LocalVariables.ContainsKey(varName))
@@ -52,7 +61,7 @@ namespace doing.Inner.Macro
                 {
                     if (Build.GlobalContext.GlobalEnvironmentVariables.ContainsKey(varName))
                     {
-                        Printer.Error($"DefMacro Error:variable {varName} defined.");
+                        Printer.Error($"DefMacro Error:variable {varName} defined in global.");
                         return false;
                     }
                     Build.GlobalContext.GlobalEnvironmentVariables.Add(varName, value);

@@ -29,6 +29,14 @@ namespace doing.Inner.Macro
 
             string varName = param[0..param.IndexOf("+=")].Trim();
             string adder = param[(param.IndexOf("+=") + 2)..].Trim();
+            
+            //送进GetString
+            if(!MacroTool.GetStringFromString(adder,interpreter,out adder))
+            {
+                Printer.Error($"StringAppendMacro Error:Parse value error.");
+                return false;
+            }
+
 
                 if (interpreter != null && interpreter.LocalVariables.ContainsKey(varName))
                 {

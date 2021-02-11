@@ -7,82 +7,88 @@
 % 调用 makeidx 宏包，用来处理索引
 \usepackage{makeidx} 
 
- % 开启索引的收集
+% 获取标题名称
+\usepackage{nameref}
+\makeatletter
+\newcommand*{\currentname}{\@currentlabelname}
+\makeatother
+
+% 开启索引的收集
 \makeindex
 
- % 指定参考文献样式为 plain
+% 指定参考文献样式为 plain
 \bibliographystyle{plain}
 
- % 调用 fontspec 宏包，用来处理字体
+% 调用 fontspec 宏包，用来处理字体
 \usepackage{fontspec}[no-math]
 
- % 设置字体
- \setmainfont{TeX Gyre Pagella}
- \setsansfont{Droid Sans}
- \setmonofont{CMU Typewriter Text}
- 
- % 设置中文字体
- %\setCJKmainfont{Song}
- %\setCJKsansfont{Song}
- %\setCJKmonofont{Song}
- 
- % 设置数学字体
- %\usepackage{unicode-math}
- %\setmathfont{Fira Math}
- 
- % 设置行距
- \linespread{1}
- 
- % 设置页面
- % 上下边距 0.85 英寸，左右边距0.9英寸
- \usepackage{geometry}
- \geometry{left=0.9in,right=0.9in,top=0.85in,bottom=0.85in}
- 
- % 顶部对齐
- \raggedbottom
- 
- % 修改页眉页脚
- % By fancyhdr
- \usepackage{fancyhdr}
- \pagestyle{fancy}
- \fancyhf{}
- 
- \fancyhead[C]{GOSCPS-Technical Information}
+% 设置字体
+\setmainfont{TeX Gyre Pagella}
+\setsansfont{Droid Sans}
+\setmonofont{CMU Typewriter Text}
 
- \fancyhead[RE]{\bfseries{}\thepage{} - \thechapter{}}
- \fancyhead[LO]{\bfseries{}\thepage{} - \thechapter{}}
- 
- \fancyhead[RO]{By Go\LaTeXe{}}
- \fancyhead[LE]{By Go\LaTeXe{}}
- 
- % 设置代码环境
- \usepackage{listings}
- \usepackage{keyval}
- 
- \lstset{
- numbers=left,
- tabsize=4,
- frame=shadowbox,
- escapeinside=``,
- breakatwhitespace=false,
- breaklines=true,
- keepspaces=true,
- showspaces=false,                
- showstringspaces=false,
- showtabs=false,
- backgroundcolor=\color{white},   
- commentstyle=\color{black},
- keywordstyle=\color{blue},
- numberstyle=\tiny\color{red},
- stringstyle=\color{red},
- basicstyle=\footnotesize,
- }
- 
- % Kepp safe
- % danger package call in last
- % 设置超链接
- \usepackage{hyperref}
- \hypersetup{colorlinks=true,pdftitle=GOSCPS-Technical Documentation,pdfauthor=GOSCPS,pdfsubject=Technical,pdfkeywords=GOSCPS}
+% 设置中文字体
+%\setCJKmainfont{Song}
+%\setCJKsansfont{Song}
+%\setCJKmonofont{Song}
+
+% 设置数学字体
+%\usepackage{unicode-math}
+%\setmathfont{Fira Math}
+
+% 设置行距
+\linespread{1}
+
+% 设置页面
+% 上下边距 0.85 英寸，左右边距0.9英寸
+\usepackage{geometry}
+\geometry{left=0.9in,right=0.9in,top=0.85in,bottom=0.85in}
+
+% 顶部对齐
+\raggedbottom
+
+% 修改页眉页脚
+% By fancyhdr
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+
+\fancyhead[C]{GOSCPS-Technical Information}
+
+\fancyhead[RE]{\bfseries{}\thepage{} - \currentname{}}
+\fancyhead[LO]{\bfseries{}\thepage{} - \currentname{}}
+
+\fancyhead[RO]{By Go\LaTeXe{}}
+\fancyhead[LE]{By Go\LaTeXe{}}
+
+% 设置代码环境
+\usepackage{listings}
+\usepackage{keyval}
+
+\lstset{
+	numbers=left,
+	tabsize=4,
+	frame=shadowbox,
+	escapeinside=``,
+	breakatwhitespace=false,
+	breaklines=true,
+	keepspaces=true,
+	showspaces=false,                
+	showstringspaces=false,
+	showtabs=false,
+	backgroundcolor=\color{white},   
+	commentstyle=\color{black},
+	keywordstyle=\color{blue},
+	numberstyle=\tiny\color{red},
+	stringstyle=\color{red},
+	basicstyle=\footnotesize,
+}
+
+% Kepp safe
+% danger package call in last
+% 设置超链接
+\usepackage{hyperref}
+\hypersetup{colorlinks=true,pdftitle=GOSCPS-Technical Documentation,pdfauthor=GOSCPS,pdfsubject=Technical,pdfkeywords=GOSCPS}
 
 \begin{document}
 	% Auto to title
@@ -98,7 +104,7 @@
 	\textbf{警告：此文档通常也能称为用户文档。
 		本文档所有内容均使用GOSCPS License授权。\newline{}
 		本文档附带GOSCPS License一份：}
-	\begin{verbatim}
+	\begin{lstlisting}
 		GOSCPS License
 		
 		Copyright (c) 2020-2021 GOSCPS All rights reserved.
@@ -109,17 +115,17 @@
 		
 		
 		The distribution and redistribution of source code or binary 
-		 must comply with all content in this treaty,
-		 including modified source code or binary or unmodified source code or binary.
+		must comply with all content in this treaty,
+		including modified source code or binary or unmodified source code or binary.
 		
 		When distributing and redistributing in binary or source code,
-		 the full version of this treaty must be attached.
+		the full version of this treaty must be attached.
 		
 		Without written permission, it is prohibited to support or promote
-		 the modified source code or binary in the name of "contributor" or GOSCPS.
+		the modified source code or binary in the name of "contributor" or GOSCPS.
 		
 		The copyright owner or its contributors shall not be liable for any losses,
-		 consequences, infringements, etc. caused by the source code or binary system.
+		consequences, infringements, etc. caused by the source code or binary system.
 		
 		The revised source code or binary release or redistribution needs to declare the 
 		revised part.
@@ -150,7 +156,7 @@
 		-------------------
 		如果有歧义，以中文版本为准。
 		If there is any ambiguity, the Chinese version shall prevail.
-	\end{verbatim}
+	\end{lstlisting}
 	\textbf{你已被警告!}
 	
 	% 制作目录
@@ -167,5 +173,5 @@
 	
 	% 生成索引
 	\printindex
-
+	
 \end{document}

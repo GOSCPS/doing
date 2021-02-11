@@ -2,10 +2,17 @@
 \"Print"{"Doing can build itself!"}
 
 target "doing"
-\"Sh"{"cd doing ; dotnet build --configuration Release"}
+\"Error"{"doing not supports `default`"}
 end
 
 target "install"
+#需要先设置InsatallPath
+\"Ifndef"{"InstallPath"}
+\"Error"{"You need set the `InsatallPath`"}
+endif
+
+#安装
+\"Sh"{""}
 
 end
 
