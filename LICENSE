@@ -1,45 +1,34 @@
-GOSCPS License
-
-Copyright (c) 2020 GOSCPS All rights reserved.
-
-
-Everyone is allowed to copy and publish the full version of this authorization document.
-But no modification to it is allowed.
-
-
-The distribution and redistribution of source code or binary must comply with all content in this treaty, including modified source code or binary or unmodified source code or binary.
-
-When distributing and redistributing in binary or source code, the full version of this treaty must be attached.
-
-Without written permission, it is prohibited to support or promote the modified source code or binary in the name of "contributor" or GOSCPS.
-
-The copyright owner or its contributors shall not be liable for any losses, consequences, infringements, etc. caused by the source code or binary system.
-
-The revised source code or binary release or redistribution needs to declare the revised part.
-
-
--------------------
 GOSCPS 许可证
 
-Copyright (c) 2020 GOSCPS 保留所有权利.
+Version 2, 2021-2-14
 
+Copyright (c) 2020-2021 GOSCPS 保留所有权利.
 
-每个人都可以复制和发布此授权文档的完整版本。
-但是不允许对其进行任何修改。
+定义：下文及上文中的"GOSCPS"均为Greater Open Source Co-Prosperity Sphere的简称。
+定义：任何基于本软件的源码或二进制的再开发，或者包含本软件任何一部分源码或二进制的源码或二进制，均称为：经过修改的本软件的源码或二进制。
 
+在任何人满足以下条款的情况下，可以散播本软件源码或二进制。无论是否经过修改。
+本许可证对于文档或其他作品，本许可证同样适用。
 
-源代码或二进制的发布及再发布必须遵守本条约中的所有内容，包括修改后的源代码或二进制或未经修改的源代码或二进制。
+1. 对于散播的源码或二进制，无论是否经过修改。均需要在明显位置标明：
+“本产品内含有由GOSCPS及其它贡献者所编写的代码。”
 
-以二进制或源代码发布及再发布时，必须附带上本条约完整版本。
+2. 对于散播的源码或二进制，无论其是否经过修改，需要保留本许可证完整版本，并且不允许任何修改。
 
-未经过书面许可，禁止以"贡献者"或GOSCPS的名义支持或推广修改后的源代码或二进制。
+3. 在未经允许的情况下，不得使用GOSCPS或者本软件的贡献者的名义来为本软件的源码或二进制做任何表示支持、认可或推广、促销之行为，无论本软件的源码或二进制是否经过修改。
 
-对于本源代码或二进制所造成的任何损失，后果，侵权行为等，版权所有人或其贡献者不负任何责任。
+4. 不得在散播本软件源码或二进制时提供任何明示或暗示，无论本软件源码或二进制是否经过修改。
 
-修改过的源代码或二进制发布或再发布需要声明修改的部分。
+5. 对于散播经过修改的本软件的源码或二进制，禁止使用以下许可证：
+GNUGPLv3
+GNUGPLv2
+GNULGPLv3
+GNULGPLv2.1
+GNUAllPermissive
+GNUAGPLv3.0
 
-
--------------------
-如果有歧义，以中文版本为准。
-If there is any ambiguity, the Chinese version shall prevail.
-
+免责声明：
+ * 本软件（包括源码及其二进制）不负任何明示或默示之担保责任，无论本软件（包括源代码及二进制)是否经过修改。
+ * GOSCPS及本软件之贡献者，无论任何条件、或因非违约之侵权，
+ * 对于任何因使用本软件（包括源代码及二进制)所产生的任何结果不负任何责任，
+ * 即在事前告知可能会造成此类损害的情形下亦然，无论本软件（包括源代码及二进制)是否经过修改。
