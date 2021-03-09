@@ -1,9 +1,0 @@
-{
-  "profiles": {
-    "doing": {
-      "commandName": "Project",
-      "commandLineArgs": "install",
-      "workingDirectory": "D:\\Project\\doing"
-    }
-  }
-}
