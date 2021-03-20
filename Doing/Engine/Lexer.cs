@@ -163,6 +163,9 @@ namespace Doing.Engine
     /// </summary>
     static class Lexer
     {
+        private static readonly UTF32Encoding encoding = new UTF32Encoding(false, false, true);
+
+
         public static Token[] Process(
             (string source, long row, string fileName)[] source)
         {
@@ -381,7 +384,7 @@ namespace Doing.Engine
                                         string unicode = output[(ptr+1)..(ptr+6)];
                                         long unicode_bin = Convert.ToInt64(unicode, 16);
 
-                                        str.Append(Encoding.UTF32.GetString(BitConverter.GetBytes(unicode_bin)));
+                                        str.Append(encoding.GetString(BitConverter.GetBytes(unicode_bin)));
 
                                         ptr += 5;
 
