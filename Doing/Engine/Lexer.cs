@@ -182,6 +182,7 @@ namespace Doing.Engine
 
             try
             {
+                // 循环
                 while (ptr != output.Length)
                 {
                     Token token = new Token();
@@ -334,10 +335,10 @@ namespace Doing.Engine
                         while (true)
                         {
                             if (ptr == output.Length)
-                                throw new AnalyzeException("String open but get EOF!", rowed, source[ptr].fileName);
+                                throw new AnalyzeException("String open but get EOF!", source[rowed - 1].row, source[rowed-1].fileName);
 
                             else if (char.IsControl(output[ptr]))
-                                throw new AnalyzeException("String open but get Control!", rowed, source[ptr].fileName);
+                                throw new AnalyzeException("String open but get Control!", source[rowed - 1].row, source[rowed - 1].fileName);
 
                             else if (output[ptr] == '"')
                                 break;
@@ -348,7 +349,7 @@ namespace Doing.Engine
                                 ptr++;
 
                                 if(ptr == output.Length)
-                                    throw new AnalyzeException("Escape but get EOF!", rowed, source[ptr].fileName);
+                                    throw new AnalyzeException("Escape but get EOF!", source[rowed - 1].row, source[rowed - 1].fileName);
 
                                 switch (output[ptr])
                                 {
@@ -374,7 +375,8 @@ namespace Doing.Engine
 
                                     case 'u':
                                         if((ptr + 5) >= output.Length)
-                                            throw new AnalyzeException("Unicode escape format error!", rowed, source[ptr].fileName);
+                                            throw new AnalyzeException("Unicode escape format error!",
+                                                source[rowed - 1].row, source[rowed - 1].fileName);
 
                                         string unicode = output[(ptr+1)..(ptr+5)];
                                         long unicode_bin = Convert.ToInt64(unicode, 16);
@@ -386,7 +388,7 @@ namespace Doing.Engine
                                         break;
 
                                     default:
-                                        throw new AnalyzeException("Unknown escape type!", rowed, source[ptr].fileName);
+                                        throw new AnalyzeException("Unknown escape type!", source[rowed - 1].row, source[ptr].fileName);
                                 }
                             }
 
@@ -405,21 +407,21 @@ namespace Doing.Engine
                     // 未知
                     else
                     {
-                        throw new AnalyzeException("Unknown token!", rowed + 1, source[rowed - 1].fileName);
+                        throw new AnalyzeException("Unknown token!", source[rowed - 1].row, source[rowed - 1].fileName);
                     }
 
                     ptr++;
-                    token.Line = rowed + 1;
+                    token.Line = source[rowed - 1].row;
                     token.SourceFileName = source[rowed-1].fileName;
                     tokens.Add(token);
                 }
             }
             catch (Exception)
             {
-                if(rowed > source.Length)
-                    Tool.Printer.Err($"Error at file {source[rowed - 1].fileName} lines {rowed+1}");
+                if(rowed <= source.Length)
+                    Tool.Printer.Err($"Error at file {source[rowed - 1].fileName} lines {source[rowed - 1].row}");
                 else
-                    Tool.Printer.Err($"Error at file UNKNOWN lines {rowed+1}");
+                    Tool.Printer.Err($"Error at file UNKNOWN lines {source[rowed - 1].row}");
 
                 throw;
             }
