@@ -163,9 +163,6 @@ namespace Doing.Engine
     /// </summary>
     static class Lexer
     {
-
-
-
         public static Token[] Process(
             (string source, long row, string fileName)[] source)
         {
@@ -408,21 +405,21 @@ namespace Doing.Engine
                     // 未知
                     else
                     {
-                        throw new AnalyzeException("Unknown oken!", rowed, source[rowed].fileName);
+                        throw new AnalyzeException("Unknown token!", rowed + 1, source[rowed - 1].fileName);
                     }
 
                     ptr++;
-                    token.Line = rowed;
-                    token.SourceFileName = source[rowed].fileName;
+                    token.Line = rowed + 1;
+                    token.SourceFileName = source[rowed-1].fileName;
                     tokens.Add(token);
                 }
             }
             catch (Exception)
             {
-                if(rowed < source.Length)
-                    Tool.Printer.Err($"Error at file {source[rowed].fileName} lines {rowed}");
+                if(rowed > source.Length)
+                    Tool.Printer.Err($"Error at file {source[rowed - 1].fileName} lines {rowed+1}");
                 else
-                    Tool.Printer.Err($"Error at file UNKNOWN lines {rowed}");
+                    Tool.Printer.Err($"Error at file UNKNOWN lines {rowed+1}");
 
                 throw;
             }
