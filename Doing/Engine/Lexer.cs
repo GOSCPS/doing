@@ -374,14 +374,14 @@ namespace Doing.Engine
                                         break;
 
                                     case 'u':
-                                        if((ptr + 5) >= output.Length)
+                                        if((ptr + 6) >= output.Length)
                                             throw new AnalyzeException("Unicode escape format error!",
                                                 source[rowed - 1].row, source[rowed - 1].fileName);
 
-                                        string unicode = output[(ptr+1)..(ptr+5)];
+                                        string unicode = output[(ptr+1)..(ptr+6)];
                                         long unicode_bin = Convert.ToInt64(unicode, 16);
 
-                                        str.Append(Encoding.UTF8.GetString(BitConverter.GetBytes(unicode_bin)));
+                                        str.Append(Encoding.UTF32.GetString(BitConverter.GetBytes(unicode_bin)));
 
                                         ptr += 5;
 
