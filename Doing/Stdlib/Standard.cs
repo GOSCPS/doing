@@ -53,7 +53,7 @@ namespace Doing.Stdlib
             _ = Context.FunctionList.TryAdd("Print", new Printf()) ? 1 : throw new RuntimeException("Add Standard Library Error!");
         }
 
-        class Printf :  Engine.Function
+        class Printf : Function
         {
             public override Variable Execute(Context context)
             {

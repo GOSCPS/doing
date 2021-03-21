@@ -321,21 +321,31 @@ namespace Doing.Engine
             {
                 token.Next();
 
+                // 检查变量名
                 token.IsEnd("Unexpected EOF! Miss identifier!");
 
                 if(token.Current.type != TokenType.identifier)
                 {
                     throw new RuntimeException("Miss identifier!");
                 }
+                string varName = token.Current.ValueString;
+                token.Next();
+
+                // 检查=
+                token.IsEnd("Unexpected EOF! Miss Token `=`!");
+
+                if (token.Current.type != TokenType.equal)
+                {
+                    throw new RuntimeException("Miss Token `=`!");
+                }
+                token.Next();
 
                 // 赋值
                 AssignmentExpr expr = new AssignmentExpr
                 {
                     IsGlobal = true,
-                    VarName = token.Current.ValueString
+                    VarName = varName
                 };
-
-                token.Next();
                 expr.value = ParsingExpr(ref token);
 
                 // 检查;
@@ -597,7 +607,30 @@ namespace Doing.Engine
                     throw new RuntimeException("Miss token `)`!",token.Current);
 
                 token.Next();
-                return exp;
+
+                // 四则运算
+                if ((!token.IsEnd())
+                    &&
+                    (token.Current.type == TokenType.add ||
+                    token.Current.type == TokenType.sub ||
+                    token.Current.type == TokenType.mul ||
+                    token.Current.type == TokenType.div))
+                {
+                    CalculationExpr calculationExpr = new CalculationExpr
+                    {
+                        left = exp,
+
+                        sign = token.Current.type
+                    };
+
+                    // 解析右值
+                    token.Next();
+                    calculationExpr.right = ParsingExpr(ref token);
+
+                    return calculationExpr;
+                }
+                else
+                    return exp;
             }
             else
             {
