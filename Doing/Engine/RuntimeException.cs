@@ -1,8 +1,8 @@
 ﻿/* * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * 这个文件来自 GOSCPS(https://github.com/GOSCPS)
  * 使用 GOSCPS 许可证
- * File:    Printer.cs
- * Content: Printer Source File
+ * File:    RuntimeException.cs
+ * Content: RuntimeException Source File
  * Copyright (c) 2020-2021 GOSCPS 保留所有权利.
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
@@ -20,6 +20,7 @@ using System.Dynamic;
 using System.IO;
 using System.IO.MemoryMappedFiles;
 using System.IO.Pipes;
+using System.Linq;
 using System.Net;
 using System.Net.Security;
 using System.Net.Sockets;
@@ -32,48 +33,33 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Unicode;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Timers;
 using System.Xml;
 using System.Xml.Linq;
 
 
-namespace Doing.Tool
+namespace Doing.Engine
 {
-    /// <summary>
-    /// 打印
-    /// </summary>
-    public static class Printer
+    class RuntimeException : Exception
     {
-        private static readonly object locker = new object();
+        public readonly Token? token = null;
 
-        public static void Put(string fmt,params object?[] args)
+        public RuntimeException(string msg) : base(msg)
         {
-            lock (locker)
-            {
-                Console.Out.WriteLine(fmt,args);
-            }
         }
 
-        public static void Warn(string fmt, params object?[] args)
+        public RuntimeException(string msg,Token token) : base(msg)
         {
-            lock (locker)
-            {
-                var colored = Console.ForegroundColor;
-                Console.ForegroundColor = ConsoleColor.Yellow;
-                Console.Out.WriteLine(fmt, args);
-                Console.ForegroundColor = colored;
-            }
+            this.token = token;
         }
 
-        public static void Err(string fmt, params object?[] args)
+        public override string ToString()
         {
-            lock (locker)
-            {
-                var colored = Console.ForegroundColor;
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.Error.WriteLine(fmt, args);
-                Console.ForegroundColor = colored;
-            }
+            if (token != null)
+                return $"At File {token.SourceFileName} Lines {token.Line} because of {token.type}\n" + base.ToString();
+            else
+                return base.ToString();
         }
     }
 }

@@ -98,7 +98,19 @@ namespace Doing.Engine
         double_equal,
 
         // ,
-        comma
+        comma,
+
+        // :
+        colon,
+
+        /* *** 关键字 *** */
+        keyword_target,
+
+        keyword_else,
+
+        keyword_if,
+
+        keyword_global
     }
 
     /// <summary>
@@ -163,6 +175,7 @@ namespace Doing.Engine
     /// </summary>
     static class Lexer
     {
+        // 小端序!
         private static readonly UTF32Encoding encoding = new UTF32Encoding(false, false, true);
 
 
@@ -181,7 +194,7 @@ namespace Doing.Engine
 
             // 处理
             int ptr = 0;
-            long rowed = 1;
+            long rowed = 0;
 
             try
             {
@@ -239,6 +252,9 @@ namespace Doing.Engine
 
                     else if (output[ptr] == ';')
                         token.type = TokenType.semicolon;
+
+                    else if (output[ptr] == ':')
+                        token.type = TokenType.colon;
 
                     // 需要后望的符号
                     // != & =
@@ -315,7 +331,7 @@ namespace Doing.Engine
                         string ident = output[ptr].ToString();
 
                         // 内容可为:字母，数字，下划线
-                        while ((ptr + 1) != output.Length 
+                        while ((ptr + 1) != output.Length
                             && (
                             char.IsLetterOrDigit(output[ptr + 1])
                             || output[ptr + 1] == '_'))
@@ -324,8 +340,28 @@ namespace Doing.Engine
                             ident += output[ptr].ToString();
                         }
 
-                        token.type = TokenType.identifier;
-                        token.ValueString = ident;
+                        // 检查关键字
+                        if (ident == "target")
+                        {
+                            token.type = TokenType.keyword_target;
+                        }
+                        else if(ident == "else")
+                        {
+                            token.type = TokenType.keyword_else;
+                        }
+                        else if(ident == "if")
+                        {
+                            token.type = TokenType.keyword_if;
+                        }
+                        else if(ident == "global")
+                        {
+                            token.type = TokenType.keyword_global;
+                        }
+                        else
+                        {
+                            token.type = TokenType.identifier;
+                            token.ValueString = ident;
+                        }
                     }
 
                     // 字符串
@@ -338,21 +374,21 @@ namespace Doing.Engine
                         while (true)
                         {
                             if (ptr == output.Length)
-                                throw new AnalyzeException("String open but get EOF!", source[rowed - 1].row, source[rowed-1].fileName);
+                                throw new AnalyzeException("String open but get EOF!", source[rowed].row, source[rowed].fileName);
 
                             else if (char.IsControl(output[ptr]))
-                                throw new AnalyzeException("String open but get Control!", source[rowed - 1].row, source[rowed - 1].fileName);
+                                throw new AnalyzeException("String open but get Control!", source[rowed].row, source[rowed].fileName);
 
                             else if (output[ptr] == '"')
                                 break;
 
                             // 转义
-                            else if(output[ptr] == '\\')
+                            else if (output[ptr] == '\\')
                             {
                                 ptr++;
 
-                                if(ptr == output.Length)
-                                    throw new AnalyzeException("Escape but get EOF!", source[rowed - 1].row, source[rowed - 1].fileName);
+                                if (ptr == output.Length)
+                                    throw new AnalyzeException("Escape but get EOF!", source[rowed].row, source[rowed].fileName);
 
                                 switch (output[ptr])
                                 {
@@ -377,11 +413,11 @@ namespace Doing.Engine
                                         break;
 
                                     case 'u':
-                                        if((ptr + 6) >= output.Length)
+                                        if ((ptr + 6) >= output.Length)
                                             throw new AnalyzeException("Unicode escape format error!",
-                                                source[rowed - 1].row, source[rowed - 1].fileName);
+                                                source[rowed].row, source[rowed].fileName);
 
-                                        string unicode = output[(ptr+1)..(ptr+6)];
+                                        string unicode = output[(ptr + 1)..(ptr + 6)];
                                         long unicode_bin = Convert.ToInt64(unicode, 16);
 
                                         str.Append(encoding.GetString(BitConverter.GetBytes(unicode_bin)));
@@ -391,7 +427,7 @@ namespace Doing.Engine
                                         break;
 
                                     default:
-                                        throw new AnalyzeException("Unknown escape type!", source[rowed - 1].row, source[ptr].fileName);
+                                        throw new AnalyzeException("Unknown escape type!", source[rowed].row, source[rowed].fileName);
                                 }
                             }
 
@@ -410,21 +446,21 @@ namespace Doing.Engine
                     // 未知
                     else
                     {
-                        throw new AnalyzeException("Unknown token!", source[rowed - 1].row, source[rowed - 1].fileName);
+                        throw new AnalyzeException("Unknown token!", source[rowed].row, source[rowed].fileName);
                     }
 
                     ptr++;
-                    token.Line = source[rowed - 1].row;
-                    token.SourceFileName = source[rowed-1].fileName;
+                    token.Line = source[rowed].row;
+                    token.SourceFileName = source[rowed].fileName;
                     tokens.Add(token);
                 }
             }
             catch (Exception)
             {
-                if(rowed <= source.Length)
-                    Tool.Printer.Err($"Error at file {source[rowed - 1].fileName} lines {source[rowed - 1].row}");
+                if(rowed < source.Length)
+                    Tool.Printer.Err($"Error at file {source[rowed].fileName} lines {source[rowed].row}");
                 else
-                    Tool.Printer.Err($"Error at file UNKNOWN lines {source[rowed - 1].row}");
+                    Tool.Printer.Err($"Error at file UNKNOWN lines {source[rowed].row}");
 
                 throw;
             }

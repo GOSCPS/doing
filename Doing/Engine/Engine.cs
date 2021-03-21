@@ -43,6 +43,7 @@ using YamlDotNet.Serialization.NamingConventions;
 
 namespace Doing.Engine
 {
+
     /// <summary>
     /// 解析引擎
     /// </summary>
@@ -131,8 +132,8 @@ namespace Doing.Engine
         /// </summary>
         public static void Start()
         {
-            /*try
-            {*/
+            try
+            {
                 var source = PreProcess(Program.RootFile);
 
                 // 解析
@@ -153,13 +154,28 @@ namespace Doing.Engine
                     }
                 }
 
-            /*}
+                // 构架全局变量
+                foreach(var v in Program.GlobalKeyValuePairs)
+                {
+                    Context.GlobalContext.Variables.TryAdd(v.Key, new Variable() {
+                        VariableName=v.Key,
+                        type = VariableType.String,
+                        ValueString = v.Value
+                    });
+                }
+
+                // 添加标准库
+                Stdlib.Standard.AddToLibrary();
+
+                Parsing.ParsingToken(list);
+
+            }
             catch(Exception err)
             {
                 Tool.Printer.Err("Build error!");
                 Tool.Printer.Err(err.ToString());
                 return;
-            }*/
+            }
         } 
 
 
