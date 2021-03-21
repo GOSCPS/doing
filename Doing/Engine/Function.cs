@@ -100,6 +100,11 @@ namespace Doing.Engine
         /// </summary>
         public ExprAST expr = new DoNotThingExpr();
 
+        /// <summary>
+        /// 准备和执行
+        /// </summary>
+        /// <param name="context"></param>
+        /// <returns></returns>
         public override Variable Start(Context context)
         {
             // 检查参数长度
