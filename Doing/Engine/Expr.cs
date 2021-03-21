@@ -152,11 +152,11 @@ namespace Doing.Engine
                 throw new RuntimeException("Call Function or exprs of function is null");
             }
 
-            function.args = args;
+            function.argsExprs = args;
 
             // 调用函数
             // 携带本地堆栈
-            return function.Execute(context);
+            return function.Start(context);
         }
     }
 
@@ -205,6 +205,11 @@ namespace Doing.Engine
 
             switch (result.type)
             {
+                // NoType
+                // 0
+                // ""
+                // 为false
+                // 否则都为true
                 case VariableType.NoType:
                      if (ifIsFalse == null)
                          return new Variable();

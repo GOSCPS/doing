@@ -139,7 +139,7 @@ namespace Doing
             Engine.Engine.Start();
             timer.Stop();
 
-            Tool.Printer.Put($"Use time {timer.Elapsed:dd\\.hh\\:mm\\:ss\\:fff}");
+            Tool.Printer.Put($"Use time {timer.Elapsed:dd\\.hh\\:mm\\:ss\\:fffffff}");
 
             return 0;
         }

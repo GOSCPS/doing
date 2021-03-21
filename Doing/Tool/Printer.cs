@@ -75,5 +75,16 @@ namespace Doing.Tool
                 Console.ForegroundColor = colored;
             }
         }
+
+        public static void Ok(string fmt, params object?[] args)
+        {
+            lock (locker)
+            {
+                var colored = Console.ForegroundColor;
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.Error.WriteLine(fmt, args);
+                Console.ForegroundColor = colored;
+            }
+        }
     }
 }

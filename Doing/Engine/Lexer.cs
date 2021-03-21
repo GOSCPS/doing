@@ -110,7 +110,11 @@ namespace Doing.Engine
 
         keyword_if,
 
-        keyword_global
+        keyword_global,
+
+        keyword_return,
+
+        keyword_function
     }
 
     /// <summary>
@@ -356,6 +360,14 @@ namespace Doing.Engine
                         else if(ident == "global")
                         {
                             token.type = TokenType.keyword_global;
+                        }
+                        else if(ident == "function")
+                        {
+                            token.type = TokenType.keyword_function;
+                        }
+                        else if(ident == "return")
+                        {
+                            token.type = TokenType.keyword_return;
                         }
                         else
                         {

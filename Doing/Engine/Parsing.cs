@@ -126,24 +126,6 @@ namespace Doing.Engine
     }
 
     /// <summary>
-    /// 函数
-    /// </summary>
-    abstract class Function
-    {
-        public string FunctionName = "";
-
-        /// <summary>
-        /// 表达式
-        /// </summary>
-        public abstract Variable Execute(Context context);
-
-        /// <summary>
-        /// 参数
-        /// </summary>
-        public ExprAST[] args = Array.Empty<ExprAST>();
-    }
-
-    /// <summary>
     /// 语法解析器
     /// </summary>
     static class Parsing
@@ -362,6 +344,22 @@ namespace Doing.Engine
             else if(token.Current.type == TokenType.keyword_if)
             {
                 return ParsingIf(ref token);
+            }
+            // return语句
+            else if(token.Current.type == TokenType.keyword_return)
+            {
+                token.Next();
+
+                var expr = ParsingExpr(ref token);
+
+                // 检查;
+                token.IsEnd("Miss Token `;`!");
+                if (token.Current.type != TokenType.semicolon)
+                    throw new RuntimeException("Miss Token `;`!",token.Current);
+
+                token.Next();
+
+                return expr;
             }
             else
             {
@@ -683,13 +681,87 @@ namespace Doing.Engine
             target.Body = ParsingStatement(ref token);
 
             // DEBUG
-            Tool.Printer.Put(target.TargetName);
+            /*Tool.Printer.Put(target.TargetName);
             foreach (var a in target.Deps)
             {
                 Tool.Printer.Put($"\tDeps:{a}");
-            }
+            }*/
 
             return target;
+        }
+
+        /// <summary>
+        /// 解析函数
+        /// </summary>
+        private static void ParsingFunction(ref TokenMake token)
+        {
+            token.IsEnd("Unexpected Function EOF!");
+
+            if (token.Current.type != TokenType.keyword_function)
+                throw new RuntimeException("Current token isn't `function`!");
+
+            token.Next();
+
+            // 读取标识符
+            token.IsEnd("Expect Function Identifier!");
+            if (token.Current.type != TokenType.identifier)
+                throw new RuntimeException("Expect token `identifier`!");
+
+            string funcName = token.Current.ValueString;
+
+            // 读取参数列表
+            token.Next();
+            token.IsEnd("Expect Function Identifier!");
+            if (token.Current.type != TokenType.parentheses)
+                throw new RuntimeException("Expect token `(`!");
+
+            token.Next();
+
+            List<string> args = new List<string>();
+            while (true)
+            {
+                token.IsEnd("Unexpected EOF! Expect token `)`!");
+
+                if (token.Current.type == TokenType.parentheses_end)
+                    break;
+
+                // 检查 参数列表
+                else if(token.Current.type == TokenType.identifier)
+                {
+                    args.Add(token.Current.ValueString);
+
+                    token.Next();
+                    token.IsEnd("Unexpected EOF! Expect token `)`!");
+
+                    if (token.Current.type == TokenType.comma)
+                    {
+                        token.Next();
+                        continue;
+                    }
+                    else if (token.Current.type == TokenType.parentheses_end)
+                        break;
+                    else throw new RuntimeException("Unexpected function param list!");
+                }
+                else throw new RuntimeException("Unexpected function param list!");
+            }
+            token.Next();
+
+            // 获取函数体
+            ExprAST expr = ParsingStatement(ref token);
+
+            DefinedFunction function = new DefinedFunction
+            {
+                argsList = args.ToArray(),
+                expr = expr,
+                FunctionName = funcName
+            };
+
+            // 注册
+            if(!Context.FunctionList.TryAdd(funcName, function))
+            {
+                Tool.Printer.Err($"Function `{funcName}` was defined!");
+            }
+            return;
         }
 
         /// <summary>
@@ -722,6 +794,11 @@ namespace Doing.Engine
                 {
                     var t = ParsingTarget(ref token);
                     t.Body.Execute( t.context);
+                }
+                // function
+                else if(token.Current.type == TokenType.keyword_function)
+                {
+                    ParsingFunction(ref token);
                 }
                 else
                 {

@@ -49,6 +49,7 @@ namespace Doing.Engine
     /// </summary>
     static class Engine
     {
+        private static List<string> IncludedFilePath = new List<string>();
 
         /// <summary>
         /// 预处理
@@ -59,6 +60,14 @@ namespace Doing.Engine
             PreProcess(string fileName)
         {
             fileName = fileName.Trim();
+
+            // 不重复Include
+            if (IncludedFilePath.Contains(Path.GetFullPath(fileName)))
+                return new List<(string source, long row, string fileName)>();
+
+            // 添加到引用路径
+            IncludedFilePath.Add(Path.GetFullPath(fileName));
+
 
             // 文件不存在则退出
             if (!File.Exists(fileName))
@@ -87,7 +96,7 @@ namespace Doing.Engine
                     // Include指令
                     if (preCommand.StartsWith("Include"))
                     {
-                        source.AddRange(PreProcess(preCommand["Include".Length..]));
+                        source.AddRange(PreProcess(preCommand["Include".Length..].Trim()));
                     }
 
                     // 版本号
@@ -139,7 +148,8 @@ namespace Doing.Engine
                 // 解析
                 var list = Lexer.Process(source.ToArray());
 
-                foreach(var token in list)
+                // DEBUG
+                /*foreach(var token in list)
                 {
                     Tool.Printer.Put($"At File `{token.SourceFileName}` Line {token.Line}:");
                     Tool.Printer.Put($"\tToken Type:{token.type:G}");
@@ -152,7 +162,7 @@ namespace Doing.Engine
                     {
                         Tool.Printer.Put($"\tValue:{token.ValueString:G}");
                     }
-                }
+                }*/
 
                 // 构架全局变量
                 foreach(var v in Program.GlobalKeyValuePairs)
@@ -169,6 +179,7 @@ namespace Doing.Engine
 
                 Parsing.ParsingToken(list);
 
+                Tool.Printer.Ok("Build OK!");
             }
             catch(Exception err)
             {

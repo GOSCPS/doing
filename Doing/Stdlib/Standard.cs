@@ -59,19 +59,18 @@ namespace Doing.Stdlib
             {
                 foreach(var arg in args)
                 {
-                    var v = arg.Execute(context);
 
-                    if (v == null)
+                    if (arg == null)
                         continue;
 
-                    switch(v.type)
+                    switch(arg.type)
                     {
                         case VariableType.Number:
-                            Tool.Printer.Put(v.ValueNumber.ToString());
+                            Tool.Printer.Put(arg.ValueNumber.ToString());
                             break;
 
                         case VariableType.String:
-                            Tool.Printer.Put(v.ValueString.ToString());
+                            Tool.Printer.Put(arg.ValueString.ToString());
                             break;
 
                         case VariableType.NoType:
