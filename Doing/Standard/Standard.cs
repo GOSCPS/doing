@@ -51,9 +51,23 @@ namespace Doing.Standard
         /// </summary>
         public static void AddStandard()
         {
-            if (!Engine.Utility.Context.GlobalFunctionTable.TryAdd("Print", new Print()))
-                throw new Engine.CompileException("Add Standard Library Function `Print` But it Defined!");
+            if (!Engine.Utility.Context.GlobalFunctionTable.TryAdd(typeof(Print).Name, new Print()))
+                throw new Engine.RuntimeException($"Add Standard Library Function `{typeof(Print).Name}` But it Defined!");
 
+            if (!Engine.Utility.Context.GlobalFunctionTable.TryAdd(typeof(IsUnix).Name, new IsUnix()))
+                throw new Engine.RuntimeException($"Add Standard Library Function `{typeof(IsUnix).Name}` But it Defined!");
+
+            if (!Engine.Utility.Context.GlobalFunctionTable.TryAdd(typeof(IsWin).Name, new IsWin()))
+                throw new Engine.RuntimeException($"Add Standard Library Function `{typeof(IsWin).Name}` But it Defined!");
+
+            if (!Engine.Utility.Context.GlobalFunctionTable.TryAdd(typeof(IsDefined).Name, new IsDefined()))
+                throw new Engine.RuntimeException($"Add Standard Library Function `{typeof(IsDefined).Name}` But it Defined!");
+
+            if (!Engine.Utility.Context.GlobalFunctionTable.TryAdd(typeof(IsDefinedLocal).Name, new IsDefinedLocal()))
+                throw new Engine.RuntimeException($"Add Standard Library Function `{typeof(IsDefinedLocal).Name}` But it Defined!");
+
+            if (!Engine.Utility.Context.GlobalFunctionTable.TryAdd(typeof(IsDefinedGlobal).Name, new IsDefinedGlobal()))
+                throw new Engine.RuntimeException($"Add Standard Library Function `{typeof(IsDefinedGlobal).Name}` But it Defined!");
 
         }
 

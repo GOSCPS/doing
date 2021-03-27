@@ -68,6 +68,20 @@ namespace Doing.Engine
             ErrorMsg = msg;
         }
 
+        public RuntimeException(string msg,Exception inner) :
+            base(msg, inner)
+        {
+            ErrorMsg = msg;
+            Source = new AST.NopAST(null);
+        }
+
+        public RuntimeException(string msg) :
+            base(msg)
+        {
+            ErrorMsg = msg;
+            Source = new AST.NopAST(null);
+        }
+
         public override string ToString()
         {
             return $"Doing Runtime Exception!\n" +

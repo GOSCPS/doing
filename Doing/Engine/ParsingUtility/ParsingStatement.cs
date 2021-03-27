@@ -128,6 +128,28 @@ namespace Doing.Engine.ParsingUtility
             else throw new CompileException("Unknown Assignment Statement Begin!", token.Current);
         }
 
+        /// <summary>
+        /// 解析if
+        /// </summary>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        public static AST.IExprAST Parsing_Statement_If(TokenMake token)
+        {
+            AST.IfAST @if = new AST.IfAST(token.Current);
+
+            token.Next();
+            @if.condition = ParsingExpr.Parsing_Expr(token);
+
+            @if.body = Parsing_Statement(token);
+
+            if ((!token.IsEnd()) && token.Current.type == TokenType.keyword_else)
+            {
+                token.Next();
+                @if.elseBody = Parsing_Statement(token);
+            }
+
+            return @if;
+        }
 
         public static AST.IExprAST Parsing_Statement(TokenMake token)
         {
@@ -202,6 +224,11 @@ namespace Doing.Engine.ParsingUtility
 
                     return expr;
                 }
+            }
+            // if
+            else if(token.Current.type == TokenType.keyword_if)
+            {
+                return Parsing_Statement_If(token);
             }
             // 表达式
             else

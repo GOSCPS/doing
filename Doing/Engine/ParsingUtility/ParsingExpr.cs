@@ -43,7 +43,6 @@ namespace Doing.Engine.ParsingUtility
 {
     static class ParsingExpr
     {
-
         /// <summary>
         /// 表达式运算
         /// </summary>
