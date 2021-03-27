@@ -1,8 +1,8 @@
 ﻿/* * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * 这个文件来自 GOSCPS(https://github.com/GOSCPS)
  * 使用 GOSCPS 许可证
- * File:    RuntimeException.cs
- * Content: RuntimeException Source File
+ * File:    TokenMake.cs
+ * Content: TokenMake Source File
  * Copyright (c) 2020-2021 GOSCPS 保留所有权利.
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
@@ -39,42 +39,54 @@ using System.Xml;
 using System.Xml.Linq;
 
 
-namespace Doing.Engine
+namespace Doing.Engine.ParsingUtility
 {
     /// <summary>
-    /// 运行时异常
+    /// Token辅助操作器
     /// </summary>
-    public class RuntimeException : Exception
+    public class TokenMake
     {
-        public new AST.IExprAST Source { get; init; }
-        public string? ErrorMsg { get; init; }
+        public Token[]? Tokens { get; set; }
+        public long ptr = 0;
+
+        public void Next() => ptr++;
+        public void Back() => ptr--;
+
+        public bool IsEnd() => ptr >= Tokens!.Length;
 
         /// <summary>
-        /// 运行时错误
+        /// 移动并判断下一个Token是否是指定类型
         /// </summary>
-        /// <param name="msg">错误信息</param>
-        /// <param name="source">错误AST</param>
-        public RuntimeException(string msg,AST.IExprAST source) :
-            base (msg)
+        /// <param name="type">要判断的类型</param>
+        /// <param name="endErr">如果是End，抛出错误的信息</param>
+        /// <param name="noMatchErr">如果Type不匹配，抛出错误的信息</param>
+        public void NextAndCompare(TokenType type,string endErr,string noMatchErr)
         {
-            this.Source = source;
-            ErrorMsg = msg;
+            Next();
+
+            if (IsEnd())
+            {
+                throw new CompileException(endErr,GetLastToken());
+            }
+
+            else if (Current.type != type)
+                throw new CompileException(noMatchErr, Current);
+
+            else return;
         }
 
-        public RuntimeException(string msg, AST.IExprAST source,Exception inner) :
-            base(msg, inner)
+        public Token GetLastToken()
         {
-            this.Source = source;
-            ErrorMsg = msg;
+            return Tokens![^1];
         }
 
-        public override string ToString()
+        public Token Current
         {
-            return $"Doing Runtime Exception!\n" +
-                $"{ErrorMsg}" +
-                $"Error AST:{Source.GetType().Name}\n" +
-                $"Error File `{Source.SourceFileName}` Lines `{Source.SourceFileLine}`\n" +
-                base.ToString();
+            get
+            {
+                return Tokens![ptr];
+            }
         }
     }
+
 }

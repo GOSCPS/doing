@@ -1,8 +1,8 @@
 ﻿/* * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * 这个文件来自 GOSCPS(https://github.com/GOSCPS)
  * 使用 GOSCPS 许可证
- * File:    RuntimeException.cs
- * Content: RuntimeException Source File
+ * File:    Target.cs
+ * Content: Target Source File
  * Copyright (c) 2020-2021 GOSCPS 保留所有权利.
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
@@ -39,42 +39,34 @@ using System.Xml;
 using System.Xml.Linq;
 
 
-namespace Doing.Engine
+namespace Doing.Engine.Utility
 {
     /// <summary>
-    /// 运行时异常
+    /// Target
     /// </summary>
-    public class RuntimeException : Exception
+    public class Target
     {
-        public new AST.IExprAST Source { get; init; }
-        public string? ErrorMsg { get; init; }
+        /// <summary>
+        /// Target主体
+        /// </summary>
+        public AST.IExprAST body = new AST.NopAST(null);
 
         /// <summary>
-        /// 运行时错误
+        /// Target名称
         /// </summary>
-        /// <param name="msg">错误信息</param>
-        /// <param name="source">错误AST</param>
-        public RuntimeException(string msg,AST.IExprAST source) :
-            base (msg)
-        {
-            this.Source = source;
-            ErrorMsg = msg;
-        }
+        public string name = "";
 
-        public RuntimeException(string msg, AST.IExprAST source,Exception inner) :
-            base(msg, inner)
-        {
-            this.Source = source;
-            ErrorMsg = msg;
-        }
+        /// <summary>
+        /// Target依赖
+        /// </summary>
+        public string[] deps = Array.Empty<string>();
 
-        public override string ToString()
+        /// <summary>
+        /// 执行Target
+        /// </summary>
+        public void Execute()
         {
-            return $"Doing Runtime Exception!\n" +
-                $"{ErrorMsg}" +
-                $"Error AST:{Source.GetType().Name}\n" +
-                $"Error File `{Source.SourceFileName}` Lines `{Source.SourceFileLine}`\n" +
-                base.ToString();
+            body.SafeExecute(new Context());
         }
     }
 }

@@ -1,8 +1,8 @@
 ﻿/* * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * 这个文件来自 GOSCPS(https://github.com/GOSCPS)
  * 使用 GOSCPS 许可证
- * File:    RuntimeException.cs
- * Content: RuntimeException Source File
+ * File:    Function.cs
+ * Content: Function Source File
  * Copyright (c) 2020-2021 GOSCPS 保留所有权利.
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
@@ -39,42 +39,26 @@ using System.Xml;
 using System.Xml.Linq;
 
 
-namespace Doing.Engine
+namespace Doing.Engine.Utility
 {
     /// <summary>
-    /// 运行时异常
+    /// 函数
     /// </summary>
-    public class RuntimeException : Exception
+    public abstract class Function
     {
-        public new AST.IExprAST Source { get; init; }
-        public string? ErrorMsg { get; init; }
+        /// <summary>
+        /// 函数名称
+        /// </summary>
+        public virtual string Name { get { return ""; } }
 
         /// <summary>
-        /// 运行时错误
+        /// 调用函数
         /// </summary>
-        /// <param name="msg">错误信息</param>
-        /// <param name="source">错误AST</param>
-        public RuntimeException(string msg,AST.IExprAST source) :
-            base (msg)
-        {
-            this.Source = source;
-            ErrorMsg = msg;
-        }
-
-        public RuntimeException(string msg, AST.IExprAST source,Exception inner) :
-            base(msg, inner)
-        {
-            this.Source = source;
-            ErrorMsg = msg;
-        }
-
-        public override string ToString()
-        {
-            return $"Doing Runtime Exception!\n" +
-                $"{ErrorMsg}" +
-                $"Error AST:{Source.GetType().Name}\n" +
-                $"Error File `{Source.SourceFileName}` Lines `{Source.SourceFileLine}`\n" +
-                base.ToString();
-        }
+        /// 
+        /// <param name="callerContext">调用者上下文</param>
+        /// <param name="args">调用参数</param>
+        /// 
+        /// <returns>函数返回值</returns>
+        public abstract Variable Execute(Context callerContext,Variable[] args);
     }
 }

@@ -49,7 +49,7 @@ namespace Doing.Engine
     /// </summary>
     static class Engine
     {
-        private static List<string> IncludedFilePath = new List<string>();
+        private static readonly List<string> IncludedFilePath = new List<string>();
 
         /// <summary>
         /// 预处理
@@ -125,16 +125,15 @@ namespace Doing.Engine
 
                 }
                 // 非注释
+                // 添加进源
                 else if (!line.Trim().StartsWith("#"))
                 {
-                    source.Add((line, row, fileName));
+                    source.Add((line.Trim(), row, fileName));
                 }
             }
 
             return source;
         }
-
-
 
         /// <summary>
         /// 启动构建引擎
@@ -143,10 +142,8 @@ namespace Doing.Engine
         {
             try
             {
-                var source = PreProcess(Program.RootFile);
-
                 // 解析
-                var list = Lexer.Process(source.ToArray());
+                var list = Lexer.Process(PreProcess(Program.RootFile).ToArray());
 
                 // DEBUG
                 /*foreach(var token in list)
@@ -167,17 +164,16 @@ namespace Doing.Engine
                 // 构架全局变量
                 foreach(var v in Program.GlobalKeyValuePairs)
                 {
-                    Context.GlobalContext.Variables.TryAdd(v.Key, new Variable() {
-                        VariableName=v.Key,
-                        type = VariableType.String,
+                    Utility.Context.GlobalVariableTable.TryAdd(v.Key, new Utility.Variable()
+                    {
+                        name = v.Key,
+                        Type = Utility.Variable.VariableType.String,
                         ValueString = v.Value
                     });
                 }
 
-                // 添加标准库
-                Stdlib.Standard.AddToLibrary();
-
-                Parsing.ParsingToken(list);
+                // 编译
+                Emiter.Compile(list);
 
                 Tool.Printer.Ok("Build OK!");
             }

@@ -44,7 +44,7 @@ namespace Doing.Engine
     /// <summary>
     /// Token类型
     /// </summary>
-    enum TokenType
+    public enum TokenType
     {
         // 空Token
         null_token,
@@ -114,13 +114,19 @@ namespace Doing.Engine
 
         keyword_return,
 
-        keyword_function
+        keyword_function,
+
+        keyword_null,
+
+        keyword_true,
+
+        keyword_false
     }
 
     /// <summary>
     /// 标记
     /// </summary>
-    class Token
+    public class Token
     {
         public TokenType type = TokenType.null_token;
 
@@ -369,6 +375,18 @@ namespace Doing.Engine
                         {
                             token.type = TokenType.keyword_return;
                         }
+                        else if(ident == "true")
+                        {
+                            token.type = TokenType.keyword_true;
+                        }
+                        else if (ident == "false")
+                        {
+                            token.type = TokenType.keyword_false;
+                        }
+                        else if (ident == "null")
+                        {
+                            token.type = TokenType.keyword_null;
+                        }
                         else
                         {
                             token.type = TokenType.identifier;
@@ -439,7 +457,7 @@ namespace Doing.Engine
                                         break;
 
                                     default:
-                                        throw new AnalyzeException("Unknown escape type!", source[rowed].row, source[rowed].fileName);
+                                        throw new AnalyzeException("Unknown escape!", source[rowed].row, source[rowed].fileName);
                                 }
                             }
 

@@ -44,7 +44,7 @@ namespace Doing.Tool
     /// </summary>
     public static class Printer
     {
-        private static readonly object locker = new object();
+        public static readonly object locker = new object();
 
         public static void Put(string fmt,params object?[] args)
         {

@@ -6,7 +6,6 @@
  * Copyright (c) 2020-2021 GOSCPS 保留所有权利.
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-using Doing.Engine;
 using System;
 using System.Buffers;
 using System.Buffers.Binary;
@@ -40,56 +39,23 @@ using System.Xml;
 using System.Xml.Linq;
 
 
-namespace Doing.Stdlib
+namespace Doing.Standard
 {
     /// <summary>
     /// 标准库
     /// </summary>
-    class Standard
+    public static class Standard
     {
-
-        public static void AddToLibrary()
+        /// <summary>
+        /// 添加标准库
+        /// </summary>
+        public static void AddStandard()
         {
-            _ = Context.FunctionList.TryAdd("Print", new Printf()) ? 1 : throw new RuntimeException("Add Standard Library Error!");
+            if (!Engine.Utility.Context.GlobalFunctionTable.TryAdd("Print", new Print()))
+                throw new Engine.CompileException("Add Standard Library Function `Print` But it Defined!");
+
+
         }
-
-        class Printf : Function
-        {
-            public override Variable Execute(Context context)
-            {
-                foreach(var arg in args)
-                {
-
-                    if (arg == null)
-                        continue;
-
-                    switch(arg.type)
-                    {
-                        case VariableType.Number:
-                            Tool.Printer.Put(arg.ValueNumber.ToString());
-                            break;
-
-                        case VariableType.String:
-                            Tool.Printer.Put(arg.ValueString.ToString());
-                            break;
-
-                        case VariableType.NoType:
-                            break;
-
-                        default:
-                            throw new Engine.RuntimeException("Never happen!");
-                    }
-                }
-
-                return new Variable();
-            }
-        }
-
-
-
-
-
-
 
 
 

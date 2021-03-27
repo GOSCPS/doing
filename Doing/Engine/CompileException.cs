@@ -41,40 +41,25 @@ using System.Xml.Linq;
 
 namespace Doing.Engine
 {
-    /// <summary>
-    /// 运行时异常
-    /// </summary>
-    public class RuntimeException : Exception
+    class CompileException : Exception
     {
-        public new AST.IExprAST Source { get; init; }
-        public string? ErrorMsg { get; init; }
+        public readonly Token? token = null;
 
-        /// <summary>
-        /// 运行时错误
-        /// </summary>
-        /// <param name="msg">错误信息</param>
-        /// <param name="source">错误AST</param>
-        public RuntimeException(string msg,AST.IExprAST source) :
-            base (msg)
+        public CompileException(string msg) : base(msg)
         {
-            this.Source = source;
-            ErrorMsg = msg;
         }
 
-        public RuntimeException(string msg, AST.IExprAST source,Exception inner) :
-            base(msg, inner)
+        public CompileException(string msg,Token token) : base(msg)
         {
-            this.Source = source;
-            ErrorMsg = msg;
+            this.token = token;
         }
 
         public override string ToString()
         {
-            return $"Doing Runtime Exception!\n" +
-                $"{ErrorMsg}" +
-                $"Error AST:{Source.GetType().Name}\n" +
-                $"Error File `{Source.SourceFileName}` Lines `{Source.SourceFileLine}`\n" +
-                base.ToString();
+            if (token != null)
+                return $"At File {token.SourceFileName} Lines {token.Line} because of {token.type}\n" + base.ToString();
+            else
+                return base.ToString();
         }
     }
 }
