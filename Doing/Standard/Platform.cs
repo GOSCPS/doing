@@ -28,6 +28,7 @@ using System.Net.Sockets;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime;
+using System.Runtime.InteropServices;
 using System.Runtime.Loader;
 using System.Text;
 using System.Text.Json;
@@ -49,7 +50,9 @@ namespace Doing.Standard
             if (args.Length != 0)
                 throw new Engine.RuntimeException("Needn't param!");
 
-            if (Environment.OSVersion.Platform == PlatformID.Unix)
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)
+                || RuntimeInformation.IsOSPlatform(OSPlatform.OSX)
+                || RuntimeInformation.IsOSPlatform(OSPlatform.FreeBSD))
                 return new Variable()
                 {
                     Type = Variable.VariableType.Boolean,
@@ -71,7 +74,51 @@ namespace Doing.Standard
             if (args.Length != 0)
                 throw new Engine.RuntimeException("Needn't param!");
 
-            if (Environment.OSVersion.Platform == PlatformID.Win32NT)
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                return new Variable()
+                {
+                    Type = Variable.VariableType.Boolean,
+                    ValueBoolean = true
+                };
+            else
+                return new Variable()
+                {
+                    Type = Variable.VariableType.Boolean,
+                    ValueBoolean = false
+                };
+        }
+    }
+
+    class IsMac : Engine.Utility.Function
+    {
+        public override Variable Execute(Context callerContext, Variable[] args)
+        {
+            if (args.Length != 0)
+                throw new Engine.RuntimeException("Needn't param!");
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                return new Variable()
+                {
+                    Type = Variable.VariableType.Boolean,
+                    ValueBoolean = true
+                };
+            else
+                return new Variable()
+                {
+                    Type = Variable.VariableType.Boolean,
+                    ValueBoolean = false
+                };
+        }
+    }
+
+    class IsLinux : Engine.Utility.Function
+    {
+        public override Variable Execute(Context callerContext, Variable[] args)
+        {
+            if (args.Length != 0)
+                throw new Engine.RuntimeException("Needn't param!");
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
                 return new Variable()
                 {
                     Type = Variable.VariableType.Boolean,

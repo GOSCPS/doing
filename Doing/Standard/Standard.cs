@@ -60,6 +60,12 @@ namespace Doing.Standard
             if (!Engine.Utility.Context.GlobalFunctionTable.TryAdd(typeof(IsWin).Name, new IsWin()))
                 throw new Engine.RuntimeException($"Add Standard Library Function `{typeof(IsWin).Name}` But it Defined!");
 
+            if (!Engine.Utility.Context.GlobalFunctionTable.TryAdd(typeof(IsMac).Name, new IsMac()))
+                throw new Engine.RuntimeException($"Add Standard Library Function `{typeof(IsMac).Name}` But it Defined!");
+
+            if (!Engine.Utility.Context.GlobalFunctionTable.TryAdd(typeof(IsLinux).Name, new IsLinux()))
+                throw new Engine.RuntimeException($"Add Standard Library Function `{typeof(IsLinux).Name}` But it Defined!");
+
             if (!Engine.Utility.Context.GlobalFunctionTable.TryAdd(typeof(IsDefined).Name, new IsDefined()))
                 throw new Engine.RuntimeException($"Add Standard Library Function `{typeof(IsDefined).Name}` But it Defined!");
 
@@ -69,6 +75,8 @@ namespace Doing.Standard
             if (!Engine.Utility.Context.GlobalFunctionTable.TryAdd(typeof(IsDefinedGlobal).Name, new IsDefinedGlobal()))
                 throw new Engine.RuntimeException($"Add Standard Library Function `{typeof(IsDefinedGlobal).Name}` But it Defined!");
 
+            if (!Engine.Utility.Context.GlobalFunctionTable.TryAdd(typeof(Sh).Name, new Sh()))
+                throw new Engine.RuntimeException($"Add Standard Library Function `{typeof(Sh).Name}` But it Defined!");
         }
 
 
