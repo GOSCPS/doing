@@ -40,6 +40,11 @@ namespace Doing
         public static string RootFile = "make.doing";
 
         /// <summary>
+        /// 线程计数器
+        /// </summary>
+        public static uint ThreadCount = 1;
+
+        /// <summary>
         /// 获取Doing版本号
         /// </summary>
         public static Version DoingVersion
@@ -53,7 +58,7 @@ namespace Doing
                 }
                 catch(NullReferenceException err)
                 {
-                    Tool.Printer.Warn(err.ToString());
+                    Tool.Printer.WarnLine(err.ToString());
                     return new Version(0,0,0,0);
                 }
             } 
@@ -64,18 +69,20 @@ namespace Doing
         /// </summary>
         public static void PrintHelp()
         {
-            Tool.Printer.Put("Usage:doing [Option] [--Target]");
-            Tool.Printer.Put("Option:");
-            Tool.Printer.Put("\t-D[Key]=[Value]\t\tDefine key-value pair");
-            Tool.Printer.Put("\t-F[FileName]\t\tDefine what file you want to build.");
-            Tool.Printer.Put("\t-h\t\t\tGet help of Doing.");
+            Tool.Printer.PutLine("Usage:doing [Option] [--Target]");
+            Tool.Printer.PutLine("Option:");
+            Tool.Printer.PutLine("\t-D[Key]=[Value]\t\tDefine key-value pair");
+            Tool.Printer.PutLine("\t-F[FileName]\t\tDefine what file you want to build.");
+            Tool.Printer.PutLine("\t-h\t\t\tGet help of Doing.");
+            Tool.Printer.PutLine("\t-T[Number]\t\tSet the doing max build thread count.");
+            Tool.Printer.PutLine("\t-Debug\t\t\tEnable the debug mode.");
         }
 
         static int Main(string[] args)
         {
-            Tool.Printer.Put("*** Doing Build System ***");
-            Tool.Printer.Put($"***   Version {DoingVersion}  ***");
-            Tool.Printer.Put("***   Made by GOSCPS   ***");
+            Tool.Printer.PutLine("*** Doing Build System ***");
+            Tool.Printer.PutLine($"***   Version {DoingVersion}  ***");
+            Tool.Printer.PutLine("***   Made by GOSCPS   ***");
 
             // 解析参数
             try
@@ -83,13 +90,20 @@ namespace Doing
                 int ptr = 0;
                 while (ptr != args.Length)
                 {
+                    // Debug模式
+                    if (args[ptr] == "-Debug")
+                    {
+                        // 打印运行时错误堆栈
+                        Engine.RuntimeException.PrintStack = true;
 
+                        Tool.Printer.PutLine("In Doing Debug Mode!");
+                    }
                     // 定义变量
-                    if (args[ptr].StartsWith("-D"))
+                    else if (args[ptr].StartsWith("-D"))
                     {
                         if (!args[ptr].Contains('='))
                         {
-                            Tool.Printer.Err($"Param `{args[ptr]}` usage error.");
+                            Tool.Printer.ErrLine($"Param `{args[ptr]}` usage error.");
                             return 1;
                         }
 
@@ -98,7 +112,7 @@ namespace Doing
                         if (!GlobalKeyValuePairs.ContainsKey(def[..def.IndexOf('=')]))
                             GlobalKeyValuePairs.Add(def[..def.IndexOf('=')], def[(def.IndexOf('=') + 1)..]);
                         else
-                            Tool.Printer.Warn($"Global vars `{args[ptr]}` early defined.");
+                            Tool.Printer.WarnLine($"Global vars `{args[ptr]}` early defined.");
                     }
                     // 帮助
                     else if (args[ptr] == "--help" || args[ptr] == "-h")
@@ -116,10 +130,19 @@ namespace Doing
                     {
                         RootFile = args[ptr][2..].Trim();
                     }
+                    // 线程数量
+                    else if (args[ptr].StartsWith("-T"))
+                    {
+                        if(!uint.TryParse(args[ptr][2..], out ThreadCount))
+                        {
+                            ThreadCount = (uint)Math.Abs(Environment.ProcessorCount);
+                            Tool.Printer.WarnLine($"Warn:Set thread count format error.Default use {ThreadCount}");
+                        }
+                    }
                     // 未知命令
                     else
                     {
-                        Tool.Printer.Err($"Unknown option:{args[ptr]}");
+                        Tool.Printer.ErrLine($"Unknown option:{args[ptr]}");
                         return 1;
                     }
 
@@ -128,7 +151,7 @@ namespace Doing
             }
             catch (Exception err)
             {
-                Tool.Printer.Err(err.ToString());
+                Tool.Printer.ErrLine(err.ToString());
                 return 1;
             }
 
@@ -139,7 +162,7 @@ namespace Doing
             Engine.Engine.Start();
             timer.Stop();
 
-            Tool.Printer.Put($"Use " +
+            Tool.Printer.PutLine($"Use " +
                 $"{timer.Elapsed.Days} days {timer.Elapsed.Hours} hours {timer.Elapsed.Minutes} minutes " +
                 $"{timer.Elapsed.Seconds} seconds {timer.Elapsed.Milliseconds} milliseconds");
 

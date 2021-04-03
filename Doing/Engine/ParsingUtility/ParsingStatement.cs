@@ -103,7 +103,7 @@ namespace Doing.Engine.ParsingUtility
                 if (token.IsEnd())
                     throw new CompileException("Expect `=` but get End-Of-Token!", token.GetLastToken());
                 if (token.Current.type != TokenType.equal)
-                    throw new CompileException($"Expect `=` but get `{token.Current.type}`!", token.GetLastToken());
+                    throw new CompileException($"Expect `=` but get `{token.Current.type}`!", token.Current);
                 token.Next();
 
                 // 获取表达式
@@ -118,7 +118,7 @@ namespace Doing.Engine.ParsingUtility
                 if (token.IsEnd())
                     throw new CompileException("Expect `;` but get End-Of-Token!", token.GetLastToken());
                 if (token.Current.type != TokenType.semicolon)
-                    throw new CompileException($"Expect `;` but get `{token.Current.type}`!", token.GetLastToken());
+                    throw new CompileException($"Expect `;` but get `{token.Current.type}`!", token.Current);
                 token.Next();
 
 
@@ -149,6 +149,29 @@ namespace Doing.Engine.ParsingUtility
             }
 
             return @if;
+        }
+
+        public static AST.IExprAST Parsing_Statement_Sh(TokenMake token)
+        {
+            if (token.IsEnd())
+                throw new CompileException("Expect `sh` but get End-Of-Token!", token.GetLastToken());
+
+            AST.ShAST sh = new AST.ShAST(token.Current);
+            token.Next();
+
+            // 解析表达式
+            sh.cmd = ParsingExpr.Parsing_Expr(token);
+
+            // 确保结尾;
+            if (token.IsEnd())
+                throw new CompileException("Expect `;` but get End-Of-Token!", token.GetLastToken());
+
+            else if(token.Current.type != TokenType.semicolon)
+                throw new CompileException($"Expect `;` but get `{token.Current.type:G}`!", token.Current);
+
+            token.Next();
+
+            return sh;
         }
 
         public static AST.IExprAST Parsing_Statement(TokenMake token)
@@ -229,6 +252,11 @@ namespace Doing.Engine.ParsingUtility
             else if(token.Current.type == TokenType.keyword_if)
             {
                 return Parsing_Statement_If(token);
+            }
+            // sh
+            else if(token.Current.type == TokenType.keyword_sh)
+            {
+                return Parsing_Statement_Sh(token);
             }
             // 表达式
             else

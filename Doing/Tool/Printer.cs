@@ -46,7 +46,7 @@ namespace Doing.Tool
     {
         public static readonly object locker = new object();
 
-        public static void Put(string fmt,params object?[] args)
+        public static void PutLine(string fmt,params object?[] args)
         {
             lock (locker)
             {
@@ -54,7 +54,7 @@ namespace Doing.Tool
             }
         }
 
-        public static void Warn(string fmt, params object?[] args)
+        public static void WarnLine(string fmt, params object?[] args)
         {
             lock (locker)
             {
@@ -65,7 +65,7 @@ namespace Doing.Tool
             }
         }
 
-        public static void Err(string fmt, params object?[] args)
+        public static void ErrLine(string fmt, params object?[] args)
         {
             lock (locker)
             {
@@ -76,13 +76,55 @@ namespace Doing.Tool
             }
         }
 
-        public static void Ok(string fmt, params object?[] args)
+        public static void OkLine(string fmt, params object?[] args)
         {
             lock (locker)
             {
                 var colored = Console.ForegroundColor;
                 Console.ForegroundColor = ConsoleColor.Green;
                 Console.Error.WriteLine(fmt, args);
+                Console.ForegroundColor = colored;
+            }
+        }
+
+
+        public static void Put(string fmt, params object?[] args)
+        {
+            lock (locker)
+            {
+                Console.Out.Write(fmt, args);
+            }
+        }
+
+        public static void Warn(string fmt, params object?[] args)
+        {
+            lock (locker)
+            {
+                var colored = Console.ForegroundColor;
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.Out.Write(fmt, args);
+                Console.ForegroundColor = colored;
+            }
+        }
+
+        public static void Err(string fmt, params object?[] args)
+        {
+            lock (locker)
+            {
+                var colored = Console.ForegroundColor;
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.Error.Write(fmt, args);
+                Console.ForegroundColor = colored;
+            }
+        }
+
+        public static void Ok(string fmt, params object?[] args)
+        {
+            lock (locker)
+            {
+                var colored = Console.ForegroundColor;
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.Error.Write(fmt, args);
                 Console.ForegroundColor = colored;
             }
         }

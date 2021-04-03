@@ -37,9 +37,6 @@ using System.Threading.Tasks;
 using System.Timers;
 using System.Xml;
 using System.Xml.Linq;
-using YamlDotNet.RepresentationModel;
-using YamlDotNet.Serialization;
-using YamlDotNet.Serialization.NamingConventions;
 
 namespace Doing.Engine
 {
@@ -72,7 +69,7 @@ namespace Doing.Engine
             // 文件不存在则退出
             if (!File.Exists(fileName))
             {
-                Tool.Printer.Err($"Build file `{fileName}` not found!");
+                Tool.Printer.ErrLine($"Build file `{fileName}` not found!");
                 throw new FileNotFoundException("File Not Found!", fileName);
             }
             
@@ -175,12 +172,12 @@ namespace Doing.Engine
                 // 编译
                 Emiter.Compile(list);
 
-                Tool.Printer.Ok("Build OK!");
+                Tool.Printer.OkLine("Build OK!");
             }
             catch(Exception err)
             {
-                Tool.Printer.Err("Build error!");
-                Tool.Printer.Err(err.ToString());
+                Tool.Printer.ErrLine("Build error!");
+                Tool.Printer.ErrLine(err.ToString());
                 return;
             }
         } 

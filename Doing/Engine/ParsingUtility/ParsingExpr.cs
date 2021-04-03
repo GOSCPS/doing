@@ -263,7 +263,7 @@ namespace Doing.Engine.ParsingUtility
                 || token.Current.type == TokenType.div
                 || token.Current.type == TokenType.parentheses)
             {
-                Tool.Printer.Warn($"Warn `{token.Current.SourceFileName}` Lines {token.Current.Line}:\n" +
+                Tool.Printer.WarnLine($"Warn `{token.Current.SourceFileName}` Lines {token.Current.Line}:\n" +
                     $"The keyword `true` or `false` or `null` Do not participate in calculations.\n" +
                     $"But Access Operator After them!");
             }

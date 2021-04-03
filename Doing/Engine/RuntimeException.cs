@@ -46,7 +46,10 @@ namespace Doing.Engine
     /// </summary>
     public class RuntimeException : Exception
     {
-        public new AST.IExprAST Source { get; init; }
+        // 是否打印堆栈
+        public static bool PrintStack { get; set; } = false;
+
+        public new AST.IExprAST? Source { get; init; }
         public string? ErrorMsg { get; init; }
 
         /// <summary>
@@ -72,23 +75,55 @@ namespace Doing.Engine
             base(msg, inner)
         {
             ErrorMsg = msg;
-            Source = new AST.NopAST(null);
+            Source = null;
         }
 
         public RuntimeException(string msg) :
             base(msg)
         {
             ErrorMsg = msg;
-            Source = new AST.NopAST(null);
+            Source = null;
         }
 
         public override string ToString()
         {
-            return $"Doing Runtime Exception!\n" +
-                $"{ErrorMsg}" +
-                $"Error AST:{Source.GetType().Name}\n" +
-                $"Error File `{Source.SourceFileName}` Lines `{Source.SourceFileLine}`\n" +
-                base.ToString();
+            if (PrintStack)
+            {
+                if (Source != null)
+                    return $"Doing Runtime Exception!\n" +
+                        $"\tError AST:{Source.GetType().Name}\n" +
+                        $"\tError File `{Source.SourceFileName}` Lines `{Source.SourceFileLine}`\n" +
+                        base.ToString();
+                else
+                    return $"Doing Runtime Exception!\n" + base.ToString();
+            }
+            else
+            {
+                if (Source != null)
+                {
+                    string output = $"Doing Runtime Exception!\n" +
+                        $"\tError AST:{Source.GetType().Name}\n" +
+                        $"\tError File `{Source.SourceFileName}` Lines `{Source.SourceFileLine}`\n" +
+                        $"\t{ErrorMsg}";
+
+                    // 打印Inner异常
+                    if (InnerException != null)
+                        output += $"\n{InnerException}";
+
+                    return output;
+                }
+                else
+                {
+                    string output = $"Doing Runtime Exception!\n" +
+                        $"\t{ErrorMsg}";
+
+                    // 打印Inner异常
+                    if (InnerException != null)
+                        output += $"\n{InnerException}";
+
+                    return output;
+                }
+            }
         }
     }
 }

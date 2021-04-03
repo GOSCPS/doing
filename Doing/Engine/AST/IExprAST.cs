@@ -46,7 +46,7 @@ namespace Doing.Engine.AST
             }
             catch(Exception err)
             {
-                throw new RuntimeException("Runtime Error!", this, err);
+                throw new RuntimeException("AST Runtime Error!", this, err);
             }
         }
 

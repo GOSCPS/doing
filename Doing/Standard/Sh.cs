@@ -22,6 +22,7 @@ using System.IO;
 using System.IO.MemoryMappedFiles;
 using System.IO.Pipes;
 using System.Linq;
+using System.Management.Automation;
 using System.Net;
 using System.Net.Security;
 using System.Net.Sockets;
@@ -47,6 +48,11 @@ namespace Doing.Standard
     /// </summary>
     class Sh : Engine.Utility.Function
     {
+        /// <summary>
+        /// 本地object表pwsh变量名称
+        /// </summary>
+        public const string LocalPwshVarName = "__DOING__PWSH__";
+
         public override Variable Execute(Context callerContext, Variable[] args)
         {
             if (args.Length != 1)
@@ -80,14 +86,14 @@ namespace Doing.Standard
                         if (commandS[ptr] == '$')
                             command.Append('$');
 
+                        // 非$ 视为变量
                         // 获取变量名
                         else
                         {
-                            // 有变量替换
+                            // 有变量
                             replaced = true;
 
                             // 检查{
-                            ptr++;
                             if (ptr >= commandS.Length)
                                 throw new Engine.RuntimeException("Miss token `{`!");
 
@@ -102,23 +108,25 @@ namespace Doing.Standard
                             while (true)
                             {
                                 if (ptr >= commandS.Length)
-                                    throw new Engine.RuntimeException("Miss token `{`!");
+                                    throw new Engine.RuntimeException("Miss token `}`!");
 
                                 else if (commandS[ptr] == '}')
                                     break;
 
                                 else varName.Append(commandS[ptr]);
+
+                                ptr++;
                             }
 
                             // 读取变量
                             if(!Context.TryGetVariable(callerContext,varName.ToString(),out Variable? variable)){
-                                throw new Engine.RuntimeException($"Variable `{varName.ToString()}` Not Found!");
+                                throw new Engine.RuntimeException($"Variable `{varName}` Not Found!");
                             }
                             else
                             {
                                 // 仅支持string
                                 if (variable!.Type != Variable.VariableType.String)
-                                    throw new Engine.RuntimeException($"Variable `{varName.ToString()}`'s Type isn't String!");
+                                    throw new Engine.RuntimeException($"Variable `{varName}`'s Type isn't String!");
 
                                 command.Append(variable.ValueString);
                             }
@@ -134,6 +142,8 @@ namespace Doing.Standard
             }
 
             // 启动进程
+            // sh
+            /*
             Process shell = new Process
             {
                 StartInfo = new ProcessStartInfo()
@@ -147,7 +157,9 @@ namespace Doing.Standard
                     UseShellExecute = false
                 }
             };
-            Tool.Printer.Put($"{shell.StartInfo.FileName} {shell.StartInfo.Arguments}");
+            Tool.Printer.PutLine(shell.StartInfo.FileName.Replace("{","{{").Replace("}","}}")
+                + " "
+                + shell.StartInfo.Arguments.Replace("{", "{{").Replace("}", "}}"));
             shell.Start();
             shell.WaitForExit();
 
@@ -158,7 +170,38 @@ namespace Doing.Standard
             {
                 Type = Variable.VariableType.Number,
                 ValueNumber = shell.ExitCode
-            };
+            };*/
+            PowerShell shell;
+            if (callerContext.LocalObjectTable.TryGetValue(LocalPwshVarName,out object? value)){
+                shell = (PowerShell)value;
+            }
+            else
+            {
+                shell = PowerShell.Create();
+                callerContext.LocalObjectTable.TryAdd(LocalPwshVarName,
+                    shell);
+            }
+
+            shell.AddScript($"& {commandS}");
+            Tool.Printer.PutLine("pwsh & " + commandS.Replace("{", "{{").Replace("}", "}}"));
+
+            foreach(var dy in shell.Invoke().ToArray())
+            {
+                Tool.Printer.PutLine($"{dy}");
+            }
+            
+            if (shell.HadErrors)
+            {
+                throw new RuntimeException("Command Had Errors!");
+            }
+            else
+            {
+                return new Variable()
+                {
+                    Type = Variable.VariableType.Boolean,
+                    ValueBoolean = true
+                };
+            }
         }
     }
 }

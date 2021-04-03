@@ -67,7 +67,7 @@ namespace Doing.Engine.AST
             Variable output = new Variable();
 
             foreach (var ast in blocks)
-                output = ast.Execute(context);
+                output = ast.SafeExecute(context);
 
             return output;
         }
@@ -121,6 +121,23 @@ namespace Doing.Engine.AST
                 throw new RuntimeException($"Variable `{varName}` Not Found!", this);
             }
             else return variable!;
+        }
+    }
+
+    /// <summary>
+    /// Shell执行AST
+    /// </summary>
+    class ShAST : IExprAST
+    {
+        public ShAST(Token? token) : base(token) { }
+
+        public IExprAST cmd = new NopAST(null);
+
+        public override Variable Execute(Context context)
+        {
+            Standard.Sh sh = new Standard.Sh();
+
+            return sh.Execute(context, new Variable[] { cmd.Execute(context) });
         }
     }
 }

@@ -55,8 +55,11 @@ namespace Doing.Standard
             if (args[0].Type != Variable.VariableType.String)
                 throw new Engine.RuntimeException("Param type isn't string!");
 
-            if (File.Exists(args[0].ValueString))
+            string f = args[0].ValueString;
+
+            if (File.Exists(f))
             {
+                Tool.Printer.PutLine($"Check File `{f}` ... \033[32mOK\033[0m");
                 return new Variable()
                 {
                     Type = Variable.VariableType.Boolean,
@@ -65,6 +68,7 @@ namespace Doing.Standard
             }
             else
             {
+                Tool.Printer.PutLine($"Check File `{f}` ... \033[31mErr\033[0m");
                 return new Variable()
                 {
                     Type = Variable.VariableType.Boolean,

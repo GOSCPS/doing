@@ -120,7 +120,9 @@ namespace Doing.Engine
 
         keyword_true,
 
-        keyword_false
+        keyword_false,
+
+        keyword_sh
     }
 
     /// <summary>
@@ -387,6 +389,10 @@ namespace Doing.Engine
                         {
                             token.type = TokenType.keyword_null;
                         }
+                        else if(ident == "sh")
+                        {
+                            token.type = TokenType.keyword_sh;
+                        }
                         else
                         {
                             token.type = TokenType.identifier;
@@ -488,9 +494,9 @@ namespace Doing.Engine
             catch (Exception)
             {
                 if(rowed < source.Length)
-                    Tool.Printer.Err($"Error at file {source[rowed].fileName} lines {source[rowed].row}");
+                    Tool.Printer.ErrLine($"Error at file {source[rowed].fileName} lines {source[rowed].row}");
                 else
-                    Tool.Printer.Err($"Error at file UNKNOWN lines {source[rowed].row}");
+                    Tool.Printer.ErrLine($"Error at file UNKNOWN lines {source[rowed].row}");
 
                 throw;
             }

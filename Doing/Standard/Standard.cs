@@ -77,6 +77,12 @@ namespace Doing.Standard
 
             if (!Engine.Utility.Context.GlobalFunctionTable.TryAdd(typeof(Sh).Name, new Sh()))
                 throw new Engine.RuntimeException($"Add Standard Library Function `{typeof(Sh).Name}` But it Defined!");
+
+            if (!Engine.Utility.Context.GlobalFunctionTable.TryAdd(typeof(And).Name, new And()))
+                throw new Engine.RuntimeException($"Add Standard Library Function `{typeof(And).Name}` But it Defined!");
+
+            if (!Engine.Utility.Context.GlobalFunctionTable.TryAdd(typeof(Not).Name, new Not()))
+                throw new Engine.RuntimeException($"Add Standard Library Function `{typeof(Not).Name}` But it Defined!");
         }
 
 

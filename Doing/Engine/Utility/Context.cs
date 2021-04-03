@@ -65,6 +65,12 @@ namespace Doing.Engine.Utility
             = new ConcurrentDictionary<string, Variable>();
 
         /// <summary>
+        /// 本地对象表
+        /// </summary>
+        public readonly ConcurrentDictionary<string, object> LocalObjectTable
+            = new ConcurrentDictionary<string, object>();
+
+        /// <summary>
         /// 获取变量，局部变量优先
         /// </summary>
         /// <param name="context"></param>
