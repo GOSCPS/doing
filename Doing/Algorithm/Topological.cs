@@ -6,37 +6,7 @@
  * Copyright (c) 2020-2021 GOSCPS 保留所有权利.
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-using System;
-using System.Buffers;
-using System.Buffers.Binary;
-using System.Buffers.Text;
-using System.Collections;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Collections.Specialized;
-using System.Data;
-using System.Diagnostics;
-using System.Dynamic;
-using System.IO;
-using System.IO.MemoryMappedFiles;
-using System.IO.Pipes;
-using System.Linq;
-using System.Net;
-using System.Net.Security;
-using System.Net.Sockets;
-using System.Reflection;
-using System.Reflection.Emit;
-using System.Runtime;
-using System.Runtime.Loader;
-using System.Text;
-using System.Text.Json;
-using System.Text.Json.Serialization;
-using System.Text.Unicode;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Timers;
-using System.Xml;
-using System.Xml.Linq;
 
 
 namespace Doing.Algorithm
@@ -58,23 +28,25 @@ namespace Doing.Algorithm
 
             Queue<Engine.Utility.Target> output = new Queue<Engine.Utility.Target>();
 
-            foreach(var visit in source)
+
+            // 挨个处理
+            foreach (var visit in source)
             {
-                Visit(total, visit, buf,output);
+                Visit(total, visit, buf, output);
             }
 
             return output.ToArray();
         }
 
         private static void Visit(
-            Engine.Utility.Target[] total, 
+            Engine.Utility.Target[] total,
             Engine.Utility.Target visiter,
-            Dictionary<Engine.Utility.Target,bool> buf,
+            Dictionary<Engine.Utility.Target, bool> buf,
             Queue<Engine.Utility.Target> output)
         {
 
             // 检测target是否已经经过处理
-            if (buf.TryGetValue(visiter,out bool isMade))
+            if (buf.TryGetValue(visiter, out bool isMade))
             {
                 if (isMade)
                 {
@@ -93,6 +65,7 @@ namespace Doing.Algorithm
 
                     foreach (var ddepStr in total)
                     {
+                        // 找到依赖
                         if (ddepStr.name == depStr)
                         {
                             dep = ddepStr;
@@ -103,6 +76,7 @@ namespace Doing.Algorithm
                     if (dep == null)
                         throw new Engine.RuntimeException($"Miss depend `{depStr}` in target `{visiter.name}` !");
 
+                    // 检查依赖的依赖
                     Visit(total, dep, buf, output);
                 }
 

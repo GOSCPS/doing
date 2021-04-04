@@ -6,38 +6,8 @@
  * Copyright (c) 2020-2021 GOSCPS 保留所有权利.
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-using System;
-using System.Buffers;
-using System.Buffers.Binary;
-using System.Buffers.Text;
-using System.Collections;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Collections.Specialized;
-using System.Data;
-using System.Diagnostics;
-using System.Dynamic;
-using System.IO;
-using System.IO.MemoryMappedFiles;
-using System.IO.Pipes;
-using System.Linq;
-using System.Net;
-using System.Net.Security;
-using System.Net.Sockets;
-using System.Reflection;
-using System.Reflection.Emit;
-using System.Runtime;
-using System.Runtime.Loader;
-using System.Text;
-using System.Text.Json;
-using System.Text.Json.Serialization;
-using System.Text.Unicode;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Timers;
-using System.Xml;
-using System.Xml.Linq;
 using Doing.Engine.AST;
+using System.Collections.Generic;
 
 namespace Doing.Engine.ParsingUtility
 {
@@ -61,7 +31,7 @@ namespace Doing.Engine.ParsingUtility
                 throw new CompileException($"Token `{token.Current.type:G} couldn't be a part of expr`");
 
             // 运算左值
-            AST.IExprAST ?lft;
+            AST.IExprAST? lft;
 
             // 以标识符开头
             if (token.Current.type == TokenType.identifier)
@@ -74,13 +44,13 @@ namespace Doing.Engine.ParsingUtility
                     return new GetVariableAST(token.GetLastToken()) { varName = idetn };
 
                 // ( 视为函数调用
-                else if(token.Current.type == TokenType.parentheses)
+                else if (token.Current.type == TokenType.parentheses)
                 {
                     return Parsing_Expr_Function_Call_Param(token, idetn);
                 }
 
                 // +-*/ 视为运算 设置左值
-                else if(token.Current.type == TokenType.add
+                else if (token.Current.type == TokenType.add
                     || token.Current.type == TokenType.sub
                     || token.Current.type == TokenType.mul
                     || token.Current.type == TokenType.div)
@@ -201,12 +171,12 @@ namespace Doing.Engine.ParsingUtility
         /// </summary>
         /// <param name="token"></param>
         /// <returns></returns>
-        private static IExprAST Parsing_Expr_Function_Call_Param(TokenMake token,string funcName)
+        private static IExprAST Parsing_Expr_Function_Call_Param(TokenMake token, string funcName)
         {
             if (token.IsEnd())
                 throw new CompileException("Expect Function Params but get end-of-token!", token.GetLastToken());
 
-            if(token.Current.type != TokenType.parentheses)
+            if (token.Current.type != TokenType.parentheses)
                 throw new CompileException($"Expect `(` but get {token.Current.type:G}!", token.GetLastToken());
             token.Next();
 
@@ -257,7 +227,7 @@ namespace Doing.Engine.ParsingUtility
                 return;
 
             // 尾随 + - * / ( !
-            if(token.Current.type == TokenType.add
+            if (token.Current.type == TokenType.add
                 || token.Current.type == TokenType.sub
                 || token.Current.type == TokenType.mul
                 || token.Current.type == TokenType.div
@@ -280,9 +250,9 @@ namespace Doing.Engine.ParsingUtility
         {
             if (token.IsEnd())
                 throw new CompileException("Expect expr but get End-Of-Token!", token.GetLastToken());
-            
+
             // true false null视为单独一个Expr
-            if(token.Current.type == TokenType.keyword_true)
+            if (token.Current.type == TokenType.keyword_true)
             {
                 var opt = new VariableAST(token.Current)
                 {
@@ -301,7 +271,8 @@ namespace Doing.Engine.ParsingUtility
             // false
             else if (token.Current.type == TokenType.keyword_false)
             {
-                var opt = new VariableAST(token.Current) {
+                var opt = new VariableAST(token.Current)
+                {
                     constVariable = new Utility.Variable()
                     {
                         Type = Utility.Variable.VariableType.Boolean,
@@ -315,7 +286,7 @@ namespace Doing.Engine.ParsingUtility
             }
 
             // null
-            else if(token.Current.type == TokenType.null_token)
+            else if (token.Current.type == TokenType.null_token)
             {
                 var opt = new VariableAST(token.Current)
                 {

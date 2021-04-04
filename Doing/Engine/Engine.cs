@@ -7,36 +7,8 @@
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 using System;
-using System.Buffers;
-using System.Buffers.Binary;
-using System.Buffers.Text;
-using System.Collections;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Collections.Specialized;
-using System.Data;
-using System.Diagnostics;
-using System.Dynamic;
 using System.IO;
-using System.IO.MemoryMappedFiles;
-using System.IO.Pipes;
-using System.Linq;
-using System.Net;
-using System.Net.Security;
-using System.Net.Sockets;
-using System.Reflection;
-using System.Reflection.Emit;
-using System.Runtime;
-using System.Runtime.Loader;
-using System.Text;
-using System.Text.Json;
-using System.Text.Json.Serialization;
-using System.Text.Unicode;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Timers;
-using System.Xml;
-using System.Xml.Linq;
 
 namespace Doing.Engine
 {
@@ -53,7 +25,7 @@ namespace Doing.Engine
         /// </summary>
         /// <param name="fileName"></param>
         /// <returns></returns>
-        public static List<(string source,long row,string fileName)> 
+        public static List<(string source, long row, string fileName)>
             PreProcess(string fileName)
         {
             fileName = fileName.Trim();
@@ -69,10 +41,10 @@ namespace Doing.Engine
             // 文件不存在则退出
             if (!File.Exists(fileName))
             {
-                Tool.Printer.ErrLine($"Build file `{fileName}` not found!");
+                Tool.Printer.ErrLine($"Include file `{fileName}` not found!");
                 throw new FileNotFoundException("File Not Found!", fileName);
             }
-            
+
             List<(string source, long row, string fileName)> source =
                 new List<(string source, long row, string fileName)>();
 
@@ -93,7 +65,16 @@ namespace Doing.Engine
                     // Include指令
                     if (preCommand.StartsWith("Include"))
                     {
-                        source.AddRange(PreProcess(preCommand["Include".Length..].Trim()));
+                        // 捕获无异常
+                        try
+                        {
+                            source.AddRange(PreProcess(preCommand["Include".Length..].Trim()));
+                        }
+                        catch (FileNotFoundException)
+                        {
+                            Tool.Printer.ErrLine($"File Not Include!\nAt File `{fileName}` Lines {row}");
+                            throw;
+                        }
                     }
 
                     // 版本号
@@ -102,9 +83,9 @@ namespace Doing.Engine
                         Version required = new Version(preCommand["VersionRequired".Length..].Trim());
 
                         // 确保版本适用
-                        if(Program.DoingVersion.CompareTo(required) == -1)
+                        if (Program.DoingVersion.CompareTo(required) == -1)
                         {
-                            throw new VersionException("Version too low", required);
+                            throw new VersionException($"Version too low!\nAt File `{fileName}` Lines {row}", required);
                         }
                     }
 
@@ -112,12 +93,35 @@ namespace Doing.Engine
                     // TODO
                     else if (preCommand.StartsWith("UsingSystem"))
                     {
-                        // 等价于Load
+                        // 等价于Load()
+                        string named = preCommand["UsingSystem".Length..].Trim();
 
+                        if (!named.Contains('-'))
+                        {
+                            throw new CompileException($"Macro `UsingSystem` usage error!\nAt File `{fileName}` Lines {row}");
+                        }
+                        else
+                        {
+                            Expand.ExpandLoader.LoadFrom(
+                                named[0..(named.IndexOf('-'))],
+                                named[(named.IndexOf('-') + 1)..]);
+                        }
                     }
                     else if (preCommand.StartsWith("Using"))
                     {
-                        // 等价于Load File
+                        // 等价于LoadFrom(File)
+                        string named = preCommand["Using".Length..].Trim();
+
+                        if (!named.Contains('-'))
+                        {
+                            throw new CompileException($"Macro `Using` usage error!\nAt File `{fileName}` Lines {row}");
+                        }
+                        else
+                        {
+                            Expand.ExpandLoader.LoadFromFile(
+                                named[0..(named.IndexOf('-'))],
+                                named[(named.IndexOf('-') + 1)..]);
+                        }
                     }
 
                 }
@@ -159,7 +163,7 @@ namespace Doing.Engine
                 }*/
 
                 // 构架全局变量
-                foreach(var v in Program.GlobalKeyValuePairs)
+                foreach (var v in Program.GlobalKeyValuePairs)
                 {
                     Utility.Context.GlobalVariableTable.TryAdd(v.Key, new Utility.Variable()
                     {
@@ -174,13 +178,13 @@ namespace Doing.Engine
 
                 Tool.Printer.OkLine("Build OK!");
             }
-            catch(Exception err)
+            catch (Exception err)
             {
                 Tool.Printer.ErrLine("Build error!");
                 Tool.Printer.ErrLine(err.ToString());
                 return;
             }
-        } 
+        }
 
 
 

@@ -7,7 +7,6 @@
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 using Doing.Engine.Utility;
-using System.Reflection.Emit;
 
 
 namespace Doing.Engine.AST

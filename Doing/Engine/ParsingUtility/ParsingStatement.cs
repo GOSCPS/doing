@@ -6,37 +6,7 @@
  * Copyright (c) 2020-2021 GOSCPS 保留所有权利.
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-using System;
-using System.Buffers;
-using System.Buffers.Binary;
-using System.Buffers.Text;
-using System.Collections;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Collections.Specialized;
-using System.Data;
-using System.Diagnostics;
-using System.Dynamic;
-using System.IO;
-using System.IO.MemoryMappedFiles;
-using System.IO.Pipes;
-using System.Linq;
-using System.Net;
-using System.Net.Security;
-using System.Net.Sockets;
-using System.Reflection;
-using System.Reflection.Emit;
-using System.Runtime;
-using System.Runtime.Loader;
-using System.Text;
-using System.Text.Json;
-using System.Text.Json.Serialization;
-using System.Text.Unicode;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Timers;
-using System.Xml;
-using System.Xml.Linq;
 
 
 namespace Doing.Engine.ParsingUtility
@@ -166,7 +136,7 @@ namespace Doing.Engine.ParsingUtility
             if (token.IsEnd())
                 throw new CompileException("Expect `;` but get End-Of-Token!", token.GetLastToken());
 
-            else if(token.Current.type != TokenType.semicolon)
+            else if (token.Current.type != TokenType.semicolon)
                 throw new CompileException($"Expect `;` but get `{token.Current.type:G}`!", token.Current);
 
             token.Next();
@@ -180,7 +150,7 @@ namespace Doing.Engine.ParsingUtility
                 throw new CompileException("Expect statement but get End-Of-Token!", token.GetLastToken());
 
             // 空语句
-            if(token.Current.type == TokenType.semicolon)
+            if (token.Current.type == TokenType.semicolon)
             {
                 var opt = new AST.NopAST(token.Current);
                 token.Next();
@@ -188,7 +158,7 @@ namespace Doing.Engine.ParsingUtility
             }
 
             // 语句块
-            else if(token.Current.type == TokenType.curlyBraces)
+            else if (token.Current.type == TokenType.curlyBraces)
             {
                 List<AST.IExprAST> exprs = new List<AST.IExprAST>();
                 AST.BlockAST block = new AST.BlockAST(token.Current);
@@ -215,13 +185,13 @@ namespace Doing.Engine.ParsingUtility
             }
 
             // global赋值语句
-            else if(token.Current.type == TokenType.keyword_global)
+            else if (token.Current.type == TokenType.keyword_global)
             {
                 return Parsing_Assignment_Statement(token);
             }
 
             // 标识符
-            else if(token.Current.type == TokenType.identifier)
+            else if (token.Current.type == TokenType.identifier)
             {
                 token.Next();
 
@@ -234,7 +204,8 @@ namespace Doing.Engine.ParsingUtility
                 }
 
                 // 视作Expr
-                else {
+                else
+                {
                     token.Back();
 
                     var expr = ParsingExpr.Parsing_Expr(token);
@@ -249,12 +220,12 @@ namespace Doing.Engine.ParsingUtility
                 }
             }
             // if
-            else if(token.Current.type == TokenType.keyword_if)
+            else if (token.Current.type == TokenType.keyword_if)
             {
                 return Parsing_Statement_If(token);
             }
             // sh
-            else if(token.Current.type == TokenType.keyword_sh)
+            else if (token.Current.type == TokenType.keyword_sh)
             {
                 return Parsing_Statement_Sh(token);
             }

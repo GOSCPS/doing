@@ -7,36 +7,8 @@
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 using System;
-using System.Buffers;
-using System.Buffers.Binary;
-using System.Buffers.Text;
-using System.Collections;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Collections.Specialized;
-using System.Data;
-using System.Diagnostics;
-using System.Dynamic;
-using System.IO;
-using System.IO.MemoryMappedFiles;
-using System.IO.Pipes;
-using System.Linq;
-using System.Net;
-using System.Net.Security;
-using System.Net.Sockets;
-using System.Reflection;
-using System.Reflection.Emit;
-using System.Runtime;
-using System.Runtime.Loader;
 using System.Text;
-using System.Text.Json;
-using System.Text.Json.Serialization;
-using System.Text.Unicode;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Timers;
-using System.Xml;
-using System.Xml.Linq;
 
 
 namespace Doing.Engine
@@ -357,27 +329,27 @@ namespace Doing.Engine
                         {
                             token.type = TokenType.keyword_target;
                         }
-                        else if(ident == "else")
+                        else if (ident == "else")
                         {
                             token.type = TokenType.keyword_else;
                         }
-                        else if(ident == "if")
+                        else if (ident == "if")
                         {
                             token.type = TokenType.keyword_if;
                         }
-                        else if(ident == "global")
+                        else if (ident == "global")
                         {
                             token.type = TokenType.keyword_global;
                         }
-                        else if(ident == "function")
+                        else if (ident == "function")
                         {
                             token.type = TokenType.keyword_function;
                         }
-                        else if(ident == "return")
+                        else if (ident == "return")
                         {
                             token.type = TokenType.keyword_return;
                         }
-                        else if(ident == "true")
+                        else if (ident == "true")
                         {
                             token.type = TokenType.keyword_true;
                         }
@@ -389,7 +361,7 @@ namespace Doing.Engine
                         {
                             token.type = TokenType.keyword_null;
                         }
-                        else if(ident == "sh")
+                        else if (ident == "sh")
                         {
                             token.type = TokenType.keyword_sh;
                         }
@@ -493,7 +465,7 @@ namespace Doing.Engine
             }
             catch (Exception)
             {
-                if(rowed < source.Length)
+                if (rowed < source.Length)
                     Tool.Printer.ErrLine($"Error at file {source[rowed].fileName} lines {source[rowed].row}");
                 else
                     Tool.Printer.ErrLine($"Error at file UNKNOWN lines {source[rowed].row}");

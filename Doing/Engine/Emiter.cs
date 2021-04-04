@@ -7,36 +7,10 @@
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 using System;
-using System.Buffers;
-using System.Buffers.Binary;
-using System.Buffers.Text;
-using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Collections.Specialized;
-using System.Data;
-using System.Diagnostics;
-using System.Dynamic;
-using System.IO;
-using System.IO.MemoryMappedFiles;
-using System.IO.Pipes;
 using System.Linq;
-using System.Net;
-using System.Net.Security;
-using System.Net.Sockets;
-using System.Reflection;
-using System.Reflection.Emit;
-using System.Runtime;
-using System.Runtime.Loader;
-using System.Text;
-using System.Text.Json;
-using System.Text.Json.Serialization;
-using System.Text.Unicode;
 using System.Threading;
-using System.Threading.Tasks;
-using System.Timers;
-using System.Xml;
-using System.Xml.Linq;
 
 
 namespace Doing.Engine
@@ -76,7 +50,7 @@ namespace Doing.Engine
                 // 解析Target
                 else if (token.Current.type == TokenType.keyword_target)
                 {
-                    var t= ParsingUtility.ParsingTarget.Parsing_Target(token);
+                    var t = ParsingUtility.ParsingTarget.Parsing_Target(token);
 
                     // 检测重复
                     if (targetList.Contains(t.name))
@@ -94,7 +68,7 @@ namespace Doing.Engine
 
                 }
                 // 解析函数
-                else if(token.Current.type == TokenType.keyword_function)
+                else if (token.Current.type == TokenType.keyword_function)
                 {
                     var func = ParsingUtility.ParsingFunction.Parsing_function(token);
 
@@ -102,20 +76,20 @@ namespace Doing.Engine
                         throw new CompileException($"Function `{func.Name}` defined!");
                 }
 
-                else throw new CompileException("Unknown Token Begin.",token.Current);
+                else throw new CompileException("Unknown Token Begin.", token.Current);
             }
 
 
             // 获取构建目标
             List<Utility.Target> aims = new List<Utility.Target>();
 
-            foreach(var name in Program.GlobalTargets)
+            foreach (var name in Program.GlobalTargets)
             {
                 Utility.Target? target = null;
 
-                foreach(var t in targets)
+                foreach (var t in targets)
                 {
-                    if(t.name == name)
+                    if (t.name == name)
                     {
                         target = t;
                         break;
@@ -135,21 +109,21 @@ namespace Doing.Engine
 
             // 没有设置目标
             // 警告 退出
-            if(aims.Count == 0)
+            if (aims.Count == 0)
             {
                 Tool.Printer.WarnLine("Warn:Not target to do!");
                 return;
             }
 
             // 排序
-            foreach(var t in Algorithm.Topological.Sort(aims.ToArray(), targets.ToArray()))
+            foreach (var t in Algorithm.Topological.Sort(aims.ToArray(), targets.ToArray()))
             {
                 totalTargets.Enqueue(t);
             }
 
             // 多线程执行
             List<Thread> builder = new List<Thread>();
-            for(uint a=0;a < Program.ThreadCount;a++)
+            for (uint a = 0; a < Program.ThreadCount; a++)
             {
                 Thread thread = new Thread(TaskThread)
                 {
@@ -160,7 +134,7 @@ namespace Doing.Engine
             }
 
             // 等待执行完毕
-            foreach(var t in builder)
+            foreach (var t in builder)
             {
                 t.Join();
             }
@@ -170,15 +144,15 @@ namespace Doing.Engine
         }
 
         // target列表
-        private static readonly ConcurrentQueue<Utility.Target> totalTargets 
+        private static readonly ConcurrentQueue<Utility.Target> totalTargets
             = new ConcurrentQueue<Utility.Target>();
 
         // 异常列表
-        private static readonly ConcurrentBag<(Exception, Utility.Target?)> exceptions 
+        private static readonly ConcurrentBag<(Exception, Utility.Target?)> exceptions
             = new ConcurrentBag<(Exception, Utility.Target?)>();
 
         // 完成列表
-        private static readonly ConcurrentBag<string> complete 
+        private static readonly ConcurrentBag<string> complete
             = new ConcurrentBag<string>();
 
         // 获取任务
@@ -234,7 +208,7 @@ namespace Doing.Engine
                     complete.Add(target.name);
                 }
             }
-            catch(Exception err)
+            catch (Exception err)
             {
                 exceptions.Add((err, target));
 

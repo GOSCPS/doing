@@ -7,15 +7,17 @@
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Threading;
 
 namespace Doing
 {
     class Program
     {
+        /// <summary>
+        /// 是否在Debug模式下
+        /// </summary>
+        public static bool IsDebug { get; set; } = true;
 
         /// <summary>
         /// 全局锁
@@ -48,20 +50,20 @@ namespace Doing
         /// 获取Doing版本号
         /// </summary>
         public static Version DoingVersion
-        { 
+        {
             get
             {
                 try
                 {
-                   return 
-                        System.Reflection.Assembly.GetExecutingAssembly()!.GetName()!.Version!;
+                    return
+                         System.Reflection.Assembly.GetExecutingAssembly()!.GetName()!.Version!;
                 }
-                catch(NullReferenceException err)
+                catch (NullReferenceException err)
                 {
                     Tool.Printer.WarnLine(err.ToString());
-                    return new Version(0,0,0,0);
+                    return new Version(0, 0, 0, 0);
                 }
-            } 
+            }
         }
 
         /// <summary>
@@ -95,6 +97,7 @@ namespace Doing
                     {
                         // 打印运行时错误堆栈
                         Engine.RuntimeException.PrintStack = true;
+                        IsDebug = true;
 
                         Tool.Printer.PutLine("In Doing Debug Mode!");
                     }
@@ -133,7 +136,7 @@ namespace Doing
                     // 线程数量
                     else if (args[ptr].StartsWith("-T"))
                     {
-                        if(!uint.TryParse(args[ptr][2..], out ThreadCount))
+                        if (!uint.TryParse(args[ptr][2..], out ThreadCount))
                         {
                             ThreadCount = (uint)Math.Abs(Environment.ProcessorCount);
                             Tool.Printer.WarnLine($"Warn:Set thread count format error.Default use {ThreadCount}");

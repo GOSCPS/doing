@@ -7,7 +7,6 @@
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 using System;
-using System.Reflection.Emit;
 
 
 namespace Doing.Engine.AST
@@ -44,7 +43,7 @@ namespace Doing.Engine.AST
             {
                 return Execute(context);
             }
-            catch(Exception err)
+            catch (Exception err)
             {
                 throw new RuntimeException("AST Runtime Error!", this, err);
             }
@@ -52,7 +51,7 @@ namespace Doing.Engine.AST
 
         public IExprAST(Token? token)
         {
-            if(token == null)
+            if (token == null)
             {
                 SourceFileName = "Unknown";
                 SourceFileLine = -1;

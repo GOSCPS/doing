@@ -7,38 +7,7 @@
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 using Doing.Engine.Utility;
-using System;
-using System.Buffers;
-using System.Buffers.Binary;
-using System.Buffers.Text;
-using System.Collections;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Collections.Specialized;
-using System.Data;
-using System.Diagnostics;
-using System.Dynamic;
-using System.IO;
-using System.IO.MemoryMappedFiles;
-using System.IO.Pipes;
-using System.Linq;
 using System.Management.Automation;
-using System.Net;
-using System.Net.Security;
-using System.Net.Sockets;
-using System.Reflection;
-using System.Reflection.Emit;
-using System.Runtime;
-using System.Runtime.Loader;
-using System.Text;
-using System.Text.Json;
-using System.Text.Json.Serialization;
-using System.Text.Unicode;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Timers;
-using System.Xml;
-using System.Xml.Linq;
 
 
 namespace Doing.Standard
@@ -53,155 +22,186 @@ namespace Doing.Standard
         /// </summary>
         public const string LocalPwshVarName = "__DOING__PWSH__";
 
+        /// <summary>
+        /// 创建新PowerShell
+        /// </summary>
+        public static (PowerShell, PSDataCollection<PSObject>) CreatePowerShell()
+        {
+            // 新shell
+            PowerShell shell = PowerShell.Create();
+
+            // 初始化
+            // 将输出同时定向到output
+            shell.Streams.Error.DataAdded += (sender, args) =>
+            {
+                ErrorRecord err = ((PSDataCollection<ErrorRecord>)sender!)[args.Index];
+                Tool.Printer.PutLine($"{err}");
+            };
+
+            shell.Streams.Warning.DataAdded += (sender, args) =>
+            {
+                WarningRecord warning = ((PSDataCollection<WarningRecord>)sender!)[args.Index];
+                Tool.Printer.PutLine($"{warning}");
+            };
+
+            shell.Streams.Progress.DataAdded += (sender, args) =>
+            {
+                ProgressRecord progress = ((PSDataCollection<ProgressRecord>)sender!)[args.Index];
+                Tool.Printer.PutLine($"{progress}");
+            };
+
+            shell.Streams.Information.DataAdded += (sender, args) =>
+            {
+                InformationRecord information = ((PSDataCollection<InformationRecord>)sender!)[args.Index];
+                Tool.Printer.PutLine($"{information}");
+            };
+
+            shell.Streams.Verbose.DataAdded += (sender, args) =>
+            {
+                VerboseRecord verbose = ((PSDataCollection<VerboseRecord>)sender!)[args.Index];
+                Tool.Printer.PutLine($"{verbose}");
+            };
+
+            var result = new PSDataCollection<PSObject>();
+            result.DataAdded += (sender, args) =>
+            {
+                PSObject output = ((PSDataCollection<PSObject>)sender!)[args.Index];
+                Tool.Printer.PutLine($"{output}");
+            };
+
+            return (shell, result);
+        }
+
+        /// <summary>
+        /// 执行pwsh命令
+        /// </summary>
+        /// 
+        /// <param name="cmd"></param>
+        /// 
+        /// <returns>执行成功返回true，否则false</returns>
+        public static bool ExecutePwsh(string script, (PowerShell, PSDataCollection<PSObject>) pwsh)
+        {
+            // 清除之前的输出和命令
+            pwsh.Item1.Commands.Clear();
+            pwsh.Item1.Streams.ClearStreams();
+            pwsh.Item2.Clear();
+
+            pwsh.Item1.AddScript(script);
+
+            pwsh.Item1.Invoke(null, pwsh.Item2);
+
+            if (pwsh.Item1.HadErrors)
+                return false;
+            else return true;
+        }
+
+        // shell
         public override Variable Execute(Context callerContext, Variable[] args)
         {
+            string commandS = new Format().Execute(callerContext, args).ValueString;
+
+            // 获取powershell
+            (PowerShell, PSDataCollection<PSObject>) shell;
+
+            if (callerContext.LocalObjectTable.TryGetValue(LocalPwshVarName, out object? value))
+            {
+                // shell复用
+                shell = ((PowerShell, PSDataCollection<PSObject>))(value);
+            }
+            else
+            {
+                shell = CreatePowerShell();
+
+                callerContext.LocalObjectTable.TryAdd(LocalPwshVarName, shell);
+            }
+
+            // 执行
+            if (Program.IsDebug)
+                Tool.Printer.PutLine("pwsh & " + commandS.Replace("{", "{{").Replace("}", "}}"));
+
+            if (ExecutePwsh(commandS, shell))
+            {
+                return new Variable();
+            }
+            else throw new RuntimeException("Shell Command execute error!");
+        }
+    }
+
+    class Export : Engine.Utility.Function
+    {
+
+        public override Variable Execute(Context callerContext, Variable[] args)
+        {
+            // 收集字符串参数
             if (args.Length != 1)
                 throw new Engine.RuntimeException("Need one string param!");
 
             if (args[0].Type != Variable.VariableType.String)
                 throw new Engine.RuntimeException("Param type isn't string!");
 
-            string commandS = args[0].ValueString;
-            StringBuilder command;
-            bool replaced = true;
 
-            // 替换变量
-            for (int count = 0;count < 1024 && replaced;count++)
+            // 获取powershell
+            (PowerShell, PSDataCollection<PSObject>) shell;
+
+            if (callerContext.LocalObjectTable.TryGetValue(Sh.LocalPwshVarName, out object? value))
             {
-                replaced = false;
-                command = new StringBuilder();
-
-                for (int ptr=0;ptr < commandS.Length; ptr++)
-                {
-
-                    // ${}视为变量
-                    if(commandS[ptr] == '$')
-                    {
-                        // $$ 视为$
-                        ptr++;
-
-                        if (ptr >= commandS.Length)
-                            throw new Engine.RuntimeException("Miss token `$` or `{`!");
-
-                        if (commandS[ptr] == '$')
-                            command.Append('$');
-
-                        // 非$ 视为变量
-                        // 获取变量名
-                        else
-                        {
-                            // 有变量
-                            replaced = true;
-
-                            // 检查{
-                            if (ptr >= commandS.Length)
-                                throw new Engine.RuntimeException("Miss token `{`!");
-
-                            if(commandS[ptr] != '{')
-                                throw new Engine.RuntimeException("Expect token `{`!");
-
-                            ptr++;
-
-                            // 获取变量名
-                            StringBuilder varName = new StringBuilder();
-
-                            while (true)
-                            {
-                                if (ptr >= commandS.Length)
-                                    throw new Engine.RuntimeException("Miss token `}`!");
-
-                                else if (commandS[ptr] == '}')
-                                    break;
-
-                                else varName.Append(commandS[ptr]);
-
-                                ptr++;
-                            }
-
-                            // 读取变量
-                            if(!Context.TryGetVariable(callerContext,varName.ToString(),out Variable? variable)){
-                                throw new Engine.RuntimeException($"Variable `{varName}` Not Found!");
-                            }
-                            else
-                            {
-                                // 仅支持string
-                                if (variable!.Type != Variable.VariableType.String)
-                                    throw new Engine.RuntimeException($"Variable `{varName}`'s Type isn't String!");
-
-                                command.Append(variable.ValueString);
-                            }
-                        }
-                    }
-                    else
-                    {
-                        command.Append(commandS[ptr]);
-                    }
-                }
-
-                commandS = command.ToString();
-            }
-
-            // 启动进程
-            // sh
-            /*
-            Process shell = new Process
-            {
-                StartInfo = new ProcessStartInfo()
-                {
-                    FileName = "sh",
-                    Arguments = $"-c \"{commandS}\"",
-                    RedirectStandardError = false,
-                    RedirectStandardInput = false,
-                    RedirectStandardOutput = false,
-                    CreateNoWindow = false,
-                    UseShellExecute = false
-                }
-            };
-            Tool.Printer.PutLine(shell.StartInfo.FileName.Replace("{","{{").Replace("}","}}")
-                + " "
-                + shell.StartInfo.Arguments.Replace("{", "{{").Replace("}", "}}"));
-            shell.Start();
-            shell.WaitForExit();
-
-            if (shell.ExitCode != 0)
-                throw new Engine.RuntimeException("Shell Command Not Return 0!");
-
-            return new Variable()
-            {
-                Type = Variable.VariableType.Number,
-                ValueNumber = shell.ExitCode
-            };*/
-            PowerShell shell;
-            if (callerContext.LocalObjectTable.TryGetValue(LocalPwshVarName,out object? value)){
-                shell = (PowerShell)value;
+                // shell复用
+                shell = ((PowerShell, PSDataCollection<PSObject>))(value);
             }
             else
             {
-                shell = PowerShell.Create();
-                callerContext.LocalObjectTable.TryAdd(LocalPwshVarName,
-                    shell);
+                shell = Sh.CreatePowerShell();
+
+                callerContext.LocalObjectTable.TryAdd(Sh.LocalPwshVarName, shell);
             }
 
-            shell.AddScript($"& {commandS}");
-            Tool.Printer.PutLine("pwsh & " + commandS.Replace("{", "{{").Replace("}", "}}"));
+            // 执行
+            if (Program.IsDebug)
+                Tool.Printer.PutLine("pwsh & " + $"$Env:Path=$Env:Path+\"{args[0].ValueString}\""
+                    .Replace("{", "{{").Replace("}", "}}"));
 
-            foreach(var dy in shell.Invoke().ToArray())
+            if (Sh.ExecutePwsh($"$Env:Path=$Env:Path+\"{args[0].ValueString}\"", shell))
             {
-                Tool.Printer.PutLine($"{dy}");
+                return new Variable();
             }
-            
-            if (shell.HadErrors)
+            else throw new RuntimeException("Shell Command execute error!");
+        }
+    }
+
+    class ExecuteScript : Engine.Utility.Function
+    {
+        public override Variable Execute(Context callerContext, Variable[] args)
+        {
+            // 收集字符串参数
+            if (args.Length != 1)
+                throw new Engine.RuntimeException("Need one string param!");
+
+            if (args[0].Type != Variable.VariableType.String)
+                throw new Engine.RuntimeException("Param type isn't string!");
+
+
+            // 获取powershell
+            (PowerShell, PSDataCollection<PSObject>) shell;
+
+            if (callerContext.LocalObjectTable.TryGetValue(Sh.LocalPwshVarName, out object? value))
             {
-                throw new RuntimeException("Command Had Errors!");
+                // shell复用
+                shell = ((PowerShell, PSDataCollection<PSObject>))(value);
             }
             else
             {
-                return new Variable()
-                {
-                    Type = Variable.VariableType.Boolean,
-                    ValueBoolean = true
-                };
+                shell = Sh.CreatePowerShell();
+
+                callerContext.LocalObjectTable.TryAdd(Sh.LocalPwshVarName, shell);
             }
+
+            // 执行
+            if (Program.IsDebug)
+                Tool.Printer.PutLine("pwsh " + $"{args[0].ValueString}".Replace("{", "{{").Replace("}", "}}"));
+
+            if (Sh.ExecutePwsh(args[0].ValueString, shell))
+                return new Variable();
+            else throw new RuntimeException("Shell Command execute error!");
         }
     }
 }

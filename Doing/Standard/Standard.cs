@@ -6,39 +6,6 @@
  * Copyright (c) 2020-2021 GOSCPS 保留所有权利.
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-using System;
-using System.Buffers;
-using System.Buffers.Binary;
-using System.Buffers.Text;
-using System.Collections;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Collections.Specialized;
-using System.Data;
-using System.Diagnostics;
-using System.Dynamic;
-using System.IO;
-using System.IO.MemoryMappedFiles;
-using System.IO.Pipes;
-using System.Linq;
-using System.Net;
-using System.Net.Security;
-using System.Net.Sockets;
-using System.Reflection;
-using System.Reflection.Emit;
-using System.Runtime;
-using System.Runtime.Loader;
-using System.Text;
-using System.Text.Json;
-using System.Text.Json.Serialization;
-using System.Text.Unicode;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Timers;
-using System.Xml;
-using System.Xml.Linq;
-
-
 namespace Doing.Standard
 {
     /// <summary>
@@ -83,6 +50,18 @@ namespace Doing.Standard
 
             if (!Engine.Utility.Context.GlobalFunctionTable.TryAdd(typeof(Not).Name, new Not()))
                 throw new Engine.RuntimeException($"Add Standard Library Function `{typeof(Not).Name}` But it Defined!");
+
+            if (!Engine.Utility.Context.GlobalFunctionTable.TryAdd(typeof(Export).Name, new Export()))
+                throw new Engine.RuntimeException($"Add Standard Library Function `{typeof(Export).Name}` But it Defined!");
+
+            if (!Engine.Utility.Context.GlobalFunctionTable.TryAdd(typeof(Format).Name, new Format()))
+                throw new Engine.RuntimeException($"Add Standard Library Function `{typeof(Format).Name}` But it Defined!");
+
+            if (!Engine.Utility.Context.GlobalFunctionTable.TryAdd(typeof(ExecuteScript).Name, new ExecuteScript()))
+                throw new Engine.RuntimeException($"Add Standard Library Function `{typeof(ExecuteScript).Name}` But it Defined!");
+
+            if (!Engine.Utility.Context.GlobalFunctionTable.TryAdd(typeof(GetEnvironmentVariable).Name, new GetEnvironmentVariable()))
+                throw new Engine.RuntimeException($"Add Standard Library Function `{typeof(GetEnvironmentVariable).Name}` But it Defined!");
         }
 
 

@@ -7,37 +7,6 @@
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 using Doing.Engine.Utility;
-using System;
-using System.Buffers;
-using System.Buffers.Binary;
-using System.Buffers.Text;
-using System.Collections;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Collections.Specialized;
-using System.Data;
-using System.Diagnostics;
-using System.Dynamic;
-using System.IO;
-using System.IO.MemoryMappedFiles;
-using System.IO.Pipes;
-using System.Linq;
-using System.Net;
-using System.Net.Security;
-using System.Net.Sockets;
-using System.Reflection;
-using System.Reflection.Emit;
-using System.Runtime;
-using System.Runtime.Loader;
-using System.Text;
-using System.Text.Json;
-using System.Text.Json.Serialization;
-using System.Text.Unicode;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Timers;
-using System.Xml;
-using System.Xml.Linq;
 
 
 namespace Doing.Standard
@@ -49,7 +18,7 @@ namespace Doing.Standard
             if (args.Length != 1)
                 throw new Engine.RuntimeException("Need one string param!");
 
-            if(args[0].Type != Variable.VariableType.String)
+            if (args[0].Type != Variable.VariableType.String)
                 throw new Engine.RuntimeException("Param type isn't string!");
 
             if (Context.TryGetVariable(callerContext, args[0].ValueString, out _))
