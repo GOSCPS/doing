@@ -71,9 +71,9 @@ namespace Doing
         /// </summary>
         public static void PrintHelp()
         {
-            Tool.Printer.PutLine("Usage:doing [Option] [--Target]");
+            Tool.Printer.PutLine("Usage:Doing [Option] [--Target]");
             Tool.Printer.PutLine("Option:");
-            Tool.Printer.PutLine("\t-D[Key]=[Value]\t\tDefine key-value pair");
+            Tool.Printer.PutLine("\t-D[Key]=[Value]\t\tDefine key-value pair.");
             Tool.Printer.PutLine("\t-F[FileName]\t\tDefine what file you want to build.");
             Tool.Printer.PutLine("\t-h\t\t\tGet help of Doing then exit.");
             Tool.Printer.PutLine("\t-T[Number]\t\tSet the doing max build thread count.");
@@ -142,7 +142,7 @@ namespace Doing
                         if (!uint.TryParse(args[ptr][2..], out ThreadCount))
                         {
                             ThreadCount = (uint)Math.Abs(Environment.ProcessorCount);
-                            Tool.Printer.WarnLine($"Warn:Set thread count format error.Default use {ThreadCount}");
+                            Tool.Printer.WarnLine($"Warn:Set thread count format error.Default use {ThreadCount}.");
                         }
                     }
                     // 未知命令
