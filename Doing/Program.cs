@@ -75,7 +75,7 @@ namespace Doing
             Tool.Printer.PutLine("Option:");
             Tool.Printer.PutLine("\t-D[Key]=[Value]\t\tDefine key-value pair");
             Tool.Printer.PutLine("\t-F[FileName]\t\tDefine what file you want to build.");
-            Tool.Printer.PutLine("\t-h\t\t\tGet help of Doing.");
+            Tool.Printer.PutLine("\t-h\t\t\tGet help of Doing then exit.");
             Tool.Printer.PutLine("\t-T[Number]\t\tSet the doing max build thread count.");
             Tool.Printer.PutLine("\t-Debug\t\t\tEnable the debug mode.");
         }
@@ -121,6 +121,9 @@ namespace Doing
                     else if (args[ptr] == "--help" || args[ptr] == "-h")
                     {
                         PrintHelp();
+
+                        // !打印后即退出
+                        return 0;
                     }
                     // 获取Target
                     else if (args[ptr].StartsWith("--"))
