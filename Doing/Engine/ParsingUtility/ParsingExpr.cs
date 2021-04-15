@@ -36,8 +36,7 @@ namespace Doing.Engine.ParsingUtility
             // 以标识符开头
             if (token.Current.type == TokenType.identifier)
             {
-                string idetn = token.Current.ValueString;
-                token.Next();
+                string idetn = ParsingUtility.GetIdentifier(token);
 
                 // 末尾，返回值
                 if (token.IsEnd())
@@ -65,8 +64,7 @@ namespace Doing.Engine.ParsingUtility
             // 以数字开头
             else if (token.Current.type == TokenType.number)
             {
-                long num = token.Current.ValueNumber;
-                token.Next();
+                long num = ParsingUtility.GetNumber(token);
 
                 // 末尾，返回值
                 if (token.IsEnd())
@@ -85,7 +83,7 @@ namespace Doing.Engine.ParsingUtility
                     || token.Current.type == TokenType.mul
                     || token.Current.type == TokenType.div)
                 {
-                    lft = new VariableAST(token.GetLastToken())
+                    lft = new VariableAST(token.Current)
                     {
                         constVariable = new Utility.Variable
                         {
@@ -96,7 +94,7 @@ namespace Doing.Engine.ParsingUtility
                 }
 
                 // 其他 返回
-                else return new VariableAST(token.GetLastToken())
+                else return new VariableAST(token.Current)
                 {
                     constVariable = new Utility.Variable
                     {
@@ -109,8 +107,7 @@ namespace Doing.Engine.ParsingUtility
             // 以字符串开头
             else if (token.Current.type == TokenType.str)
             {
-                string str = token.Current.ValueString;
-                token.Next();
+                string str = ParsingUtility.GetString(token);
 
                 // 末尾，返回值
                 if (token.IsEnd())
@@ -129,7 +126,7 @@ namespace Doing.Engine.ParsingUtility
                     || token.Current.type == TokenType.mul
                     || token.Current.type == TokenType.div)
                 {
-                    lft = new VariableAST(token.GetLastToken())
+                    lft = new VariableAST(token.Current)
                     {
                         constVariable = new Utility.Variable
                         {
@@ -140,7 +137,7 @@ namespace Doing.Engine.ParsingUtility
                 }
 
                 // 其他 返回
-                else return new VariableAST(token.GetLastToken())
+                else return new VariableAST(token.Current)
                 {
                     constVariable = new Utility.Variable
                     {

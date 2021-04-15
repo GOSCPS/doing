@@ -25,15 +25,10 @@ namespace Doing.Engine.ParsingUtility
             if (token.Current.type == TokenType.identifier)
             {
                 // 获取变量名
-                string named = token.Current.ValueString;
-                token.Next();
+                string named = ParsingUtility.GetIdentifier(token);
 
                 // 确保 =
-                if (token.IsEnd())
-                    throw new CompileException("Expect `=` but get End-Of-Token!", token.GetLastToken());
-                if (token.Current.type != TokenType.equal)
-                    throw new CompileException($"Expect `=` but get `{token.Current.type}`!", token.GetLastToken());
-                token.Next();
+                ParsingUtility.CheckTokenType(token, TokenType.equal);
 
                 // 获取表达式
                 AST.AssignmentAST assignment = new AST.AssignmentAST(token.Current)
@@ -43,11 +38,7 @@ namespace Doing.Engine.ParsingUtility
                 };
 
                 // 确保 ;
-                if (token.IsEnd())
-                    throw new CompileException("Expect `;` but get End-Of-Token!", token.GetLastToken());
-                if (token.Current.type != TokenType.semicolon)
-                    throw new CompileException($"Expect `;` but get `{token.Current.type}`!", token.GetLastToken());
-                token.Next();
+                ParsingUtility.CheckSemicolon(token);
 
                 return assignment;
             }
@@ -59,22 +50,10 @@ namespace Doing.Engine.ParsingUtility
                 token.Next();
 
                 // 确保 标识符(变量名)
-                if (token.IsEnd())
-                    throw new CompileException("Expect identifier but get End-Of-Token!", token.GetLastToken());
-                if (token.Current.type != TokenType.identifier)
-                    throw new CompileException($"Expect identifier but get `{token.Current.type}`!", token.GetLastToken());
-
-                // 获取变量名
-                string named = token.Current.ValueString;
-                token.Next();
-
+                string named = ParsingUtility.GetIdentifier(token);
 
                 // 确保 =
-                if (token.IsEnd())
-                    throw new CompileException("Expect `=` but get End-Of-Token!", token.GetLastToken());
-                if (token.Current.type != TokenType.equal)
-                    throw new CompileException($"Expect `=` but get `{token.Current.type}`!", token.Current);
-                token.Next();
+                ParsingUtility.CheckTokenType(token, TokenType.equal);
 
                 // 获取表达式
                 AST.GlobalAssignmentAST assignment = new AST.GlobalAssignmentAST(token.Current)
@@ -85,12 +64,7 @@ namespace Doing.Engine.ParsingUtility
 
 
                 // 确保 ;
-                if (token.IsEnd())
-                    throw new CompileException("Expect `;` but get End-Of-Token!", token.GetLastToken());
-                if (token.Current.type != TokenType.semicolon)
-                    throw new CompileException($"Expect `;` but get `{token.Current.type}`!", token.Current);
-                token.Next();
-
+                ParsingUtility.CheckSemicolon(token);
 
                 return assignment;
             }
@@ -108,12 +82,17 @@ namespace Doing.Engine.ParsingUtility
             AST.IfAST @if = new AST.IfAST(token.Current);
 
             token.Next();
+
+            // 解析表达撒
             @if.condition = ParsingExpr.Parsing_Expr(token);
 
+            // 解析主体语句
             @if.body = Parsing_Statement(token);
 
+            // 有else
             if ((!token.IsEnd()) && token.Current.type == TokenType.keyword_else)
             {
+                // 解析else语句
                 token.Next();
                 @if.elseBody = Parsing_Statement(token);
             }
@@ -133,11 +112,7 @@ namespace Doing.Engine.ParsingUtility
             sh.cmd = ParsingExpr.Parsing_Expr(token);
 
             // 确保结尾;
-            if (token.IsEnd())
-                throw new CompileException("Expect `;` but get End-Of-Token!", token.GetLastToken());
-
-            else if (token.Current.type != TokenType.semicolon)
-                throw new CompileException($"Expect `;` but get `{token.Current.type:G}`!", token.Current);
+            ParsingUtility.CheckSemicolon(token);
 
             token.Next();
 
@@ -211,10 +186,7 @@ namespace Doing.Engine.ParsingUtility
                     var expr = ParsingExpr.Parsing_Expr(token);
 
                     // 确保 ;存在
-                    if (token.IsEnd())
-                        throw new CompileException("Expect `;` but get End-Of-Token!", token.GetLastToken());
-                    if (token.Current.type != TokenType.semicolon)
-                        throw new CompileException($"Expect `;` but get `{token.Current.type}`!", token.GetLastToken());
+                    ParsingUtility.CheckSemicolon(token);
 
                     return expr;
                 }
@@ -235,10 +207,7 @@ namespace Doing.Engine.ParsingUtility
                 var expr = ParsingExpr.Parsing_Expr(token);
 
                 // 确保 ;存在
-                if (token.IsEnd())
-                    throw new CompileException("Expect `;` but get End-Of-Token!", token.GetLastToken());
-                if (token.Current.type != TokenType.semicolon)
-                    throw new CompileException($"Expect `;` but get `{token.Current.type}`!", token.GetLastToken());
+                ParsingUtility.CheckSemicolon(token);
 
                 return expr;
             }
