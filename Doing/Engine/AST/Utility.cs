@@ -53,7 +53,10 @@ namespace Doing.Engine.AST
 
         public override Variable Execute(Context context)
         {
-            Context.SetVariable(context, name, value.Execute(context));
+            Variable variable = value.Execute(context);
+            variable.name = name;
+
+            Context.SetVariable(context, name, variable);
             return new Variable();
         }
     }
@@ -70,7 +73,10 @@ namespace Doing.Engine.AST
 
         public override Variable Execute(Context context)
         {
-            Context.SetVariable_Global(name, value.Execute(context));
+            Variable variable = value.Execute(context);
+            variable.name = name;
+
+            Context.SetVariable_Global(name, variable);
             return new Variable();
         }
     }

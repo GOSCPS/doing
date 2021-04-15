@@ -15,21 +15,35 @@ namespace Doing.Engine
     {
         public readonly Token? token = null;
 
+        private string msg = "";
+
         public CompileException(string msg) : base(msg)
         {
+            this.msg = msg;
         }
 
         public CompileException(string msg, Token token) : base(msg)
         {
             this.token = token;
+            this.msg = msg;
         }
 
         public override string ToString()
         {
-            if (token != null)
-                return $"At File {token.SourceFileName} Lines {token.Line} because of {token.type}\n" + base.ToString();
+            if (Program.IsDebug)
+            {
+                if (token != null)
+                    return $"At File `{token.SourceFileName}` Lines {token.Line} because of {token.type}\n" + base.ToString();
+                else
+                    return base.ToString();
+            }
             else
-                return base.ToString();
+            {
+                if (token != null)
+                    return $"At File `{token.SourceFileName}` Lines {token.Line} because of {token.type}\n" + msg;
+                else
+                    return msg;
+            }
         }
     }
 }

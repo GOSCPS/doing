@@ -13,6 +13,204 @@ namespace Doing.Engine.ParsingUtility
 {
     static class ParsingExpr
     {
+
+        // 运算符优先级
+        // 从高到低
+        // ()
+        // * /
+        // + -
+        // 比较运算符(== != ...)
+        // 运算符结合算法
+
+        /// <summary>
+        /// 表达式解析的开始
+        /// 最低级表达式
+        /// </summary>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        private static IExprAST Begin_Expr(TokenMake token)
+        {
+            if (token.IsEnd())
+                throw new CompileException("Incomplete expression!");
+
+            AST.ExprExprAST expr = new(token.Current);
+            expr.LFT = High_Expr(token);
+
+            // !
+            expr.RGH = null;
+
+            while (true)
+            {
+                if (token.IsEnd())
+                    break;
+
+                // 解析 + -
+                if (token.Current.type == TokenType.add
+                || token.Current.type == TokenType.sub)
+                {
+                    if (expr.RGH == null)
+                    {
+                        expr.op = token.Current.type;
+                        token.Next();
+
+                        // 解析右值
+                        expr.RGH = High_Expr(token);
+                    }
+                    else
+                    {
+                        ExprExprAST high = new(token.Current);
+
+                        high.op = token.Current.type;
+                        token.Next();
+
+                        high.LFT = expr;
+
+                        high.RGH = High_Expr(token);
+
+                        expr = high;
+                    }
+                }
+
+                else break;
+            }
+
+            // 右值为空，则只返回左值
+            if (expr.RGH == null)
+                return expr.LFT;
+
+            return expr;
+        }
+
+        /// <summary>
+        /// 高一级表达式
+        /// </summary>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        private static IExprAST High_Expr(TokenMake token)
+        {
+            if (token.IsEnd())
+                throw new CompileException("Incomplete expression!");
+
+            AST.ExprExprAST expr = new(token.Current);
+            expr.LFT = Highest_Expr(token);
+
+            // !
+            expr.RGH = null;
+
+            while (true)
+            {
+                if (token.IsEnd())
+                    break;
+
+                // 解析 * / 
+                if (token.Current.type == TokenType.mul
+                || token.Current.type == TokenType.div)
+                {
+                    if (expr.RGH == null)
+                    {
+                        expr.op = token.Current.type;
+                        token.Next();
+
+                        // 解析右值
+                        expr.RGH = Highest_Expr(token);
+                    }
+                    else
+                    {
+                        ExprExprAST high = new(token.Current);
+
+                        high.op = token.Current.type;
+                        token.Next();
+
+                        high.LFT = expr;
+
+                        high.RGH = Highest_Expr(token);
+
+                        expr = high;
+                    }
+                }
+
+                else break;
+            }
+
+            // 右值为空，则只返回左值
+            if (expr.RGH == null)
+                return expr.LFT;
+
+            return expr;
+        }
+
+        /// <summary>
+        /// 最高级表达式
+        /// </summary>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        private static IExprAST Highest_Expr(TokenMake token)
+        {
+            if (token.IsEnd())
+                throw new CompileException("Incomplete expression!");
+
+            // 只解析 (
+            if (token.Current.type == TokenType.parentheses)
+            {
+                token.Next();
+
+                IExprAST expr = Begin_Expr(token);
+
+                // 检查)
+                ParsingUtility.CheckTokenType(token, TokenType.parentheses_end);
+
+                return expr;
+            }
+            // 剩下基本单位
+            else if (token.Current.type == TokenType.str)
+            {
+                return new VariableAST(token.Current)
+                {
+                    constVariable = new Utility.Variable()
+                    {
+                        Type = Utility.Variable.VariableType.String,
+                        ValueString = ParsingUtility.GetString(token)
+                    }
+                };
+            }
+            else if (token.Current.type == TokenType.number)
+            {
+                return new VariableAST(token.Current)
+                {
+                    constVariable = new Utility.Variable()
+                    {
+                        Type = Utility.Variable.VariableType.Number,
+                        ValueNumber = ParsingUtility.GetNumber(token)
+                    }
+                };
+            }
+            else if (token.Current.type == TokenType.identifier)
+            {
+                string named = ParsingUtility.GetIdentifier(token);
+
+                // 判断是否是函数调用
+
+                // 是函数调用
+                if((!token.IsEnd()) && token.Current.type == TokenType.parentheses)
+                {
+                    return Parsing_Expr_Function_Call_Param(token, named);
+                }
+                // 不是函数调用
+                else
+                {
+                    token.Back();
+                    var e = new AST.GetVariableAST(token.Current)
+                    {
+                        varName = named
+                    };
+                    token.Next();
+                    return e;
+                }
+            }
+            else throw new CompileException("Unknown token!",token.Current);
+        }
+
+
         /// <summary>
         /// 表达式运算
         /// </summary>
@@ -20,145 +218,49 @@ namespace Doing.Engine.ParsingUtility
         /// <returns></returns>
         private static IExprAST Parsing_Expr_Calculation(TokenMake token)
         {
-            // 末尾
+            // 读取所有可以参与运算的符号
+            // + - * / == !=  > >= <= < 数字 字符串 标识符 ( ) ,
+
             if (token.IsEnd())
-                throw new CompileException("Expect part of expr!", token.GetLastToken());
+                throw new CompileException("Expect Expr but get end-of-token!", token.GetLastToken());
 
-            // 不接受true false null
-            if (token.Current.type == TokenType.keyword_true
-                || token.Current.type == TokenType.null_token
-                || token.Current.type == TokenType.keyword_false)
-                throw new CompileException($"Token `{token.Current.type:G} couldn't be a part of expr`");
-
-            // 运算左值
-            AST.IExprAST? lft;
-
-            // 以标识符开头
-            if (token.Current.type == TokenType.identifier)
+            // 收集
+            List<Token> exprToken = new();
+            while (true)
             {
-                string idetn = ParsingUtility.GetIdentifier(token);
-
-                // 末尾，返回值
                 if (token.IsEnd())
-                    return new GetVariableAST(token.GetLastToken()) { varName = idetn };
+                    break;
 
-                // ( 视为函数调用
-                else if (token.Current.type == TokenType.parentheses)
-                {
-                    return Parsing_Expr_Function_Call_Param(token, idetn);
-                }
-
-                // +-*/ 视为运算 设置左值
-                else if (token.Current.type == TokenType.add
+                if(token.Current.type == TokenType.add
                     || token.Current.type == TokenType.sub
                     || token.Current.type == TokenType.mul
-                    || token.Current.type == TokenType.div)
-                {
-                    lft = new GetVariableAST(token.GetLastToken()) { varName = idetn };
+                    || token.Current.type == TokenType.div
+                    || token.Current.type == TokenType.double_equal
+                    || token.Current.type == TokenType.not_equal
+                    || token.Current.type == TokenType.bigger
+                    || token.Current.type == TokenType.bigger_equal
+                     || token.Current.type == TokenType.smaller
+                    || token.Current.type == TokenType.smaller_equal
+                     || token.Current.type == TokenType.parentheses
+                    || token.Current.type == TokenType.parentheses_end
+                    || token.Current.type == TokenType.number
+                    || token.Current.type == TokenType.str
+                    || token.Current.type == TokenType.identifier
+                    || token.Current.type == TokenType.comma){
+                    exprToken.Add(token.Current);
+                    token.Next();
                 }
-
-                // 其他 返回
-                else return new GetVariableAST(token.GetLastToken()) { varName = idetn };
+                else break;
             }
+            if (exprToken.Count == 0)
+                throw new CompileException("Expect Expr but get wrong token", token.Current);
 
-            // 以数字开头
-            else if (token.Current.type == TokenType.number)
-            {
-                long num = ParsingUtility.GetNumber(token);
+            // 解析
+            var exprMaker = new TokenMake() { Tokens = exprToken.ToArray() };
+            IExprAST expr = Begin_Expr(exprMaker);
 
-                // 末尾，返回值
-                if (token.IsEnd())
-                    return new VariableAST(token.GetLastToken())
-                    {
-                        constVariable = new Utility.Variable
-                        {
-                            Type = Utility.Variable.VariableType.Number,
-                            ValueNumber = num
-                        }
-                    };
-
-                // +-*/ 视为运算 设置左值
-                else if (token.Current.type == TokenType.add
-                    || token.Current.type == TokenType.sub
-                    || token.Current.type == TokenType.mul
-                    || token.Current.type == TokenType.div)
-                {
-                    lft = new VariableAST(token.Current)
-                    {
-                        constVariable = new Utility.Variable
-                        {
-                            Type = Utility.Variable.VariableType.Number,
-                            ValueNumber = num
-                        }
-                    };
-                }
-
-                // 其他 返回
-                else return new VariableAST(token.Current)
-                {
-                    constVariable = new Utility.Variable
-                    {
-                        Type = Utility.Variable.VariableType.Number,
-                        ValueNumber = num
-                    }
-                };
-            }
-
-            // 以字符串开头
-            else if (token.Current.type == TokenType.str)
-            {
-                string str = ParsingUtility.GetString(token);
-
-                // 末尾，返回值
-                if (token.IsEnd())
-                    return new VariableAST(token.GetLastToken())
-                    {
-                        constVariable = new Utility.Variable
-                        {
-                            Type = Utility.Variable.VariableType.String,
-                            ValueString = str
-                        }
-                    };
-
-                // +-*/ 视为运算 设置左值
-                else if (token.Current.type == TokenType.add
-                    || token.Current.type == TokenType.sub
-                    || token.Current.type == TokenType.mul
-                    || token.Current.type == TokenType.div)
-                {
-                    lft = new VariableAST(token.Current)
-                    {
-                        constVariable = new Utility.Variable
-                        {
-                            Type = Utility.Variable.VariableType.String,
-                            ValueString = str
-                        }
-                    };
-                }
-
-                // 其他 返回
-                else return new VariableAST(token.Current)
-                {
-                    constVariable = new Utility.Variable
-                    {
-                        Type = Utility.Variable.VariableType.String,
-                        ValueString = str
-                    }
-                };
-            }
-
-            else throw new CompileException("Unknwon Expr Begin!", token.Current);
-
-            AST.ExprExprAST expr = new ExprExprAST(token.Current)
-            {
-                LFT = lft,
-                op = token.Current.type
-            };
-
-            // 移动到下一个Expr
-            token.Next();
-
-            expr.RGH = Parsing_Expr_Calculation(token);
+            if (!exprMaker.IsEnd())
+                throw new CompileException("Parsing expr wrong!",exprMaker.Current);
 
             return expr;
         }
@@ -170,18 +272,18 @@ namespace Doing.Engine.ParsingUtility
         /// <returns></returns>
         private static IExprAST Parsing_Expr_Function_Call_Param(TokenMake token, string funcName)
         {
-            if (token.IsEnd())
-                throw new CompileException("Expect Function Params but get end-of-token!", token.GetLastToken());
+            // 检查(
+            ParsingUtility.CheckTokenType(token, TokenType.parentheses);
 
-            if (token.Current.type != TokenType.parentheses)
-                throw new CompileException($"Expect `(` but get {token.Current.type:G}!", token.GetLastToken());
-            token.Next();
+            token.Back();
 
             // 设置前置信息
-            FunctionCallExprAST function = new FunctionCallExprAST(token.Current)
+            FunctionCallExprAST function = new(token.Current)
             {
                 funcName = funcName
             };
+
+            token.Next();
 
             List<IExprAST> args = new List<IExprAST>();
 
@@ -193,18 +295,20 @@ namespace Doing.Engine.ParsingUtility
                         , token.GetLastToken());
 
                 // )
+                // 获取参数结束
                 else if (token.Current.type == TokenType.parentheses_end)
                 {
                     break;
                 }
 
                 // ,
+                // 继续获取参数
                 else if (token.Current.type == TokenType.comma)
                 {
                     token.Next();
                 }
 
-                args.Add(Parsing_Expr(token));
+                args.Add(Begin_Expr(token));
             }
             token.Next();
 
