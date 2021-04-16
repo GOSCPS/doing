@@ -93,7 +93,7 @@ namespace Doing
                 while (ptr != args.Length)
                 {
                     // Debug模式
-                    if (args[ptr] == "-Debug")
+                    if (args[ptr] == "--debug")
                     {
                         // 打印运行时错误堆栈
                         Engine.RuntimeException.PrintStack = true;
@@ -102,7 +102,7 @@ namespace Doing
                         Tool.Printer.PutLine("In Doing Debug Mode!");
                     }
                     // 定义变量
-                    else if (args[ptr].StartsWith("-D"))
+                    else if (args[ptr].StartsWith("-d"))
                     {
                         if (!args[ptr].Contains('='))
                         {
@@ -132,12 +132,12 @@ namespace Doing
                             GlobalTargets.Add(args[ptr][2..]);
                     }
                     // 文件
-                    else if (args[ptr].StartsWith("-F"))
+                    else if (args[ptr].StartsWith("-f"))
                     {
                         RootFile = args[ptr][2..].Trim();
                     }
                     // 线程数量
-                    else if (args[ptr].StartsWith("-T"))
+                    else if (args[ptr].StartsWith("-t"))
                     {
                         if (!uint.TryParse(args[ptr][2..], out ThreadCount))
                         {
