@@ -1,8 +1,8 @@
 {
   "profiles": {
-    "Doing": {
+    "doing": {
       "commandName": "Project",
-      "commandLineArgs": ""
+      "commandLineArgs": "A"
     }
   }
 }

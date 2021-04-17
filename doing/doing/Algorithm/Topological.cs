@@ -19,14 +19,14 @@ namespace Doing.Algorithm
         /// </summary>
         /// <param name="source"></param>
         /// <returns></returns>
-        public static Engine.Utility.Target[] Sort(
-            Engine.Utility.Target[] source,
-            Engine.Utility.Target[] total)
+        public static Engine.Target[] Sort(
+            Engine.Target[] source,
+            Engine.Target[] total)
         {
-            Dictionary<Engine.Utility.Target, bool> buf =
-                new Dictionary<Engine.Utility.Target, bool>();
+            Dictionary<Engine.Target, bool> buf =
+                new ();
 
-            Queue<Engine.Utility.Target> output = new Queue<Engine.Utility.Target>();
+            Queue<Engine.Target> output = new();
 
 
             // 挨个处理
@@ -39,10 +39,10 @@ namespace Doing.Algorithm
         }
 
         private static void Visit(
-            Engine.Utility.Target[] total,
-            Engine.Utility.Target visiter,
-            Dictionary<Engine.Utility.Target, bool> buf,
-            Queue<Engine.Utility.Target> output)
+            Engine.Target[] total,
+            Engine.Target visiter,
+            Dictionary<Engine.Target, bool> buf,
+            Queue<Engine.Target> output)
         {
 
             // 检测target是否已经经过处理
@@ -50,7 +50,7 @@ namespace Doing.Algorithm
             {
                 if (isMade)
                 {
-                    throw new Engine.RuntimeException($"Circular dependency detected. At target `{visiter.name}`.");
+                    throw new Exception.RuntimeException($"Circular dependency detected. At target `{visiter.Name}`.");
                 }
                 else return;
             }
@@ -59,14 +59,14 @@ namespace Doing.Algorithm
                 buf.Add(visiter, true);
 
                 // 检查依赖
-                foreach (var depStr in visiter.deps)
+                foreach (var depStr in visiter.Deps)
                 {
-                    Engine.Utility.Target? dep = null;
+                    Engine.Target? dep = null;
 
                     foreach (var ddepStr in total)
                     {
                         // 找到依赖
-                        if (ddepStr.name == depStr)
+                        if (ddepStr.Name == depStr)
                         {
                             dep = ddepStr;
                             break;
@@ -74,7 +74,7 @@ namespace Doing.Algorithm
                     }
 
                     if (dep == null)
-                        throw new Engine.RuntimeException($"Miss depend `{depStr}` in target `{visiter.name}` !");
+                        throw new Exception.RuntimeException($"Miss depend `{depStr}` in target `{visiter.Name}` !");
 
                     // 检查依赖的依赖
                     Visit(total, dep, buf, output);

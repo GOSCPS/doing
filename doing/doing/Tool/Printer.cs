@@ -16,7 +16,7 @@ namespace Doing.Tool
     /// </summary>
     public static class Printer
     {
-        public static readonly object locker = new object();
+        public static readonly object locker = new();
 
         public static void PutLine(string fmt, params object?[] args)
         {
@@ -99,6 +99,30 @@ namespace Doing.Tool
                 Console.Error.Write(fmt, args);
                 Console.ForegroundColor = colored;
             }
+        }
+
+        public static void Debug(string fmt, params object?[] args)
+        {
+            if (Program.IsDebug)
+                lock (locker)
+                {
+                    var colored = Console.ForegroundColor;
+                    Console.ForegroundColor = ConsoleColor.Gray;
+                    Console.Error.Write(fmt, args);
+                    Console.ForegroundColor = colored;
+                }
+        }
+
+        public static void DebugLine(string fmt, params object?[] args)
+        {
+            if (Program.IsDebug)
+                lock (locker)
+                {
+                    var colored = Console.ForegroundColor;
+                    Console.ForegroundColor = ConsoleColor.Gray;
+                    Console.Error.WriteLine(fmt, args);
+                    Console.ForegroundColor = colored;
+                }
         }
     }
 }
