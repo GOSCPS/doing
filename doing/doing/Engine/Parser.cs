@@ -86,6 +86,7 @@ namespace Doing.Engine
         public static BuildFileInfo[]
             PreProcess(string fileName)
         {
+            // 转换为绝对路径
             fileName = fileName.Trim();
             fileName = Path.GetFullPath(fileName);
 
@@ -286,6 +287,9 @@ namespace Doing.Engine
                     // 添加Main
                     if(target.Name == "Main")
                     {
+                        if (target.Deps.Length != 0)
+                            throw new Exception.RuntimeException("The Main target couldn't has depends!", file, file.Lines[target.StartLine]);
+
                         if (main != null)
                             throw new Exception.RuntimeException("One file only can define a `Main`!", file, file.Lines[target.StartLine]);
 
@@ -294,7 +298,6 @@ namespace Doing.Engine
                     // 名称重复则不添加
                     else if (targetsName.Contains(target.Name))
                     {
-                        if (main != null)
                             throw new Exception.RuntimeException($"The target `{target.Name}` is defined!", file, file.Lines[target.StartLine]);
                     }
                     else
@@ -330,7 +333,7 @@ namespace Doing.Engine
             List<BuildModuleInfo> moduleInfos = new();
             List<Target> targetList = new();
 
-            foreach(var f in files)
+            foreach (var f in files)
             {
                 moduleInfos.Add(ProcessFile(f));
             }
@@ -339,17 +342,17 @@ namespace Doing.Engine
             Runner.Modules = moduleInfos.ToArray();
 
             // 添加Target
-            foreach(var module in Runner.Modules)
+            foreach (var module in Runner.Modules)
             {
-                foreach(var target in module.Targets)
+                foreach (var target in module.Targets)
                 {
                     // 不重复添加
-                    if (Runner.TargetList.TryGetValue(target.Name,out (BuildModuleInfo,Target) output))
+                    if (Runner.TargetList.TryGetValue(target.Name, out (BuildModuleInfo, Target) output))
                     {
                         throw new Exception.RuntimeException($"The target `{target.Name}` is defined " +
                             $"at `{output.Item1.SourceFile.FileName}` " +
                             $"Line {output.Item1.SourceFile.Lines[output.Item2.StartLine]}!",
-                            module.SourceFile,module.SourceFile.Lines[target.StartLine]);
+                            module.SourceFile, module.SourceFile.Lines[target.StartLine]);
                     }
                     else if (!Runner.TargetList.TryAdd(target.Name, (module, target)))
                     {
@@ -363,10 +366,12 @@ namespace Doing.Engine
                 }
             }
 
+            Runner.AllExistTargets = targetList;
+
             // 获取目标
             List<Target> aims = new();
 
-            foreach(var str in Program.AimTargets)
+            foreach (var str in Program.AimTargets)
             {
                 if (Runner.TargetList.TryGetValue(str, out (BuildModuleInfo, Target) result))
                 {
@@ -378,9 +383,45 @@ namespace Doing.Engine
                 }
             }
 
+            // 获取Main
+            List<Target> mains = new();
+
+            foreach (var aim in aims)
+            {
+                Target? buildMain = null;
+
+                foreach (var mod in Runner.Modules)
+                {
+                    if (mod.SourceFile.FileName == aim.FileName)
+                    {
+                        buildMain = mod.MainTarget;
+
+                        // 置为null
+                        // 确保一个Module只执行一次Main
+                        mod.MainTarget = null;
+                    }
+                }
+
+                if (buildMain != null)
+                    mains.Add(buildMain);
+            }
+
+            List<Target> totalBuildTargets = new();
+            totalBuildTargets.AddRange(mains.ToArray());
+
+            // 添加Main
+            foreach (var main in mains.ToArray())
+                Runner.AimTargets.Enqueue(main);
+
             // 拓扑排序
             foreach (var t in Algorithm.Topological.Sort(aims.ToArray(), targetList.ToArray()))
+            {
+                totalBuildTargets.Add(t);
                 Runner.AimTargets.Enqueue(t);
+            }
+
+            // 设置总Target
+            Runner.TotalBuildTargets = totalBuildTargets.ToArray();
 
             return;
         } 

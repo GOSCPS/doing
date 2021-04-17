@@ -278,7 +278,7 @@ namespace Doing
             {
                 timer.Stop();
                 Tool.Printer.ErrLine("Build error!");
-                Tool.Printer.ErrLine(err.ToString());
+                Tool.Printer.ErrLine(err.ToString().Replace("{","{{"));
                 Tool.Printer.PutLine($"Use {timer.Elapsed:G}");
                 return -1;
             }

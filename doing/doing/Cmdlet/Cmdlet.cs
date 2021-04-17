@@ -17,27 +17,83 @@ namespace Doing.Cmdlet
         {
             InitialSessionState iss = InitialSessionState.CreateDefault();
 
-            SessionStateCmdletEntry ssce = new SessionStateCmdletEntry(
-                "Check-Linux",
+            SessionStateCmdletEntry ssce = new(
+                CheckLinux.CallName,
                 typeof(CheckLinux),
                 null);
             iss.Commands.Add(ssce);
 
-            ssce = new SessionStateCmdletEntry("Check-Mac",
+            ssce = new(
+                CheckMac.CallName,
                 typeof(CheckMac),
                 null);
             iss.Commands.Add(ssce);
 
-            ssce = new SessionStateCmdletEntry("Check-Win",
+            ssce = new(
+                CheckWin.CallName,
                 typeof(CheckWin),
                 null);
             iss.Commands.Add(ssce);
 
-            ssce = new SessionStateCmdletEntry("Check-Unix",
+            ssce = new(
+                CheckUnix.CallName,
                 typeof(CheckUnix),
                 null);
             iss.Commands.Add(ssce);
 
+            ssce = new(
+                CheckClang.CallName,
+                typeof(CheckClang),
+                null);
+            iss.Commands.Add(ssce);
+
+            ssce = new(
+                RemoveDoingVariable.CallName,
+                typeof(RemoveDoingVariable),
+                null);
+            iss.Commands.Add(ssce);
+
+            ssce = new(
+               SetDoingVariable.CallName,
+               typeof(SetDoingVariable),
+               null);
+            iss.Commands.Add(ssce); 
+            
+            ssce = new(
+                GetDoingVariable.CallName,
+                typeof(GetDoingVariable),
+                null);
+            iss.Commands.Add(ssce);
+
+            ssce = new(
+                CheckDoingVariable.CallName,
+                typeof(CheckDoingVariable),
+                null);
+            iss.Commands.Add(ssce);
+
+            ssce = new(
+                CheckDoingBuiltTarget.CallName,
+                typeof(CheckDoingBuiltTarget),
+                null);
+            iss.Commands.Add(ssce);
+
+            ssce = new(
+                GetDoingTotalTarget.CallName,
+                typeof(GetDoingTotalTarget),
+                null);
+            iss.Commands.Add(ssce);
+
+            ssce = new(
+                GetDoingUserTarget.CallName,
+                typeof(GetDoingUserTarget),
+                null);
+            iss.Commands.Add(ssce);
+
+            ssce = new(
+                AddDoingTarget.CallName,
+                typeof(AddDoingTarget),
+                null);
+            iss.Commands.Add(ssce);
 
             return iss;
         }

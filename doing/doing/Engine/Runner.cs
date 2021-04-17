@@ -12,7 +12,7 @@ namespace Doing.Engine
     /// <summary>
     /// 执行器
     /// </summary>
-    class Runner
+    public class Runner
     {
         /// <summary>
         /// 模块信息
@@ -25,14 +25,20 @@ namespace Doing.Engine
         public static ConcurrentDictionary<string, (BuildModuleInfo, Target)> TargetList { get; set;} = new();
 
         /// <summary>
-        /// 目标
+        /// 所有存在的Targets
+        /// </summary>
+        public static List<Target> AllExistTargets = new();
+
+        /// <summary>
+        /// 队列目标
+        /// 动态减少
         /// </summary>
         public static ConcurrentQueue<Target> AimTargets { get; set; } = new ConcurrentQueue<Target>();
 
         /// <summary>
-        /// 完成列表
+        /// 所有目标
         /// </summary>
-        private static readonly List<string> finishList = new();
+        public static Target[] TotalBuildTargets { get; set; } = Array.Empty<Target>();
 
         /// <summary>
         /// 错误列表
@@ -40,9 +46,64 @@ namespace Doing.Engine
         private static readonly ConcurrentStack<System.Exception> ErrList = new();
 
         /// <summary>
+        /// 全局变量表
+        /// </summary>
+        public static ConcurrentDictionary<string, object> GlobalDoingVariableTable { get; } = new();
+
+        /// <summary>
+        /// 完成列表
+        /// </summary>
+        private static readonly List<string> finishList = new();
+
+        /// <summary>
+        /// 线程表
+        /// </summary>
+        private static Thread[] threads = Array.Empty<Thread>();
+
+        /// <summary>
+        /// 线程锁
+        /// </summary>
+        private static readonly object threadsLocker = new();
+
+        /// <summary>
         /// 锁
         /// </summary>
-        private static readonly object locker = new();
+        private static readonly object finishListLocker = new();
+
+        /// <summary>
+        /// 检查Target是否已经构建完成
+        /// </summary>
+        /// <returns></returns>
+        public static bool CheckTargetFinish(string targetName)
+        {
+            lock (finishListLocker)
+            {
+                return finishList.Contains(targetName);
+            }
+        }
+
+        /// <summary>
+        /// 重新启动所有工作线程
+        /// </summary>
+        /// <returns></returns>
+        public static void ReStartThreads()
+        {
+            lock (threadsLocker)
+            {
+                for(int ptr=0;ptr < threads.Length; ptr++)
+                {
+                    if(threads[ptr] == null || (!threads[ptr].IsAlive))
+                    {
+                        threads[ptr] = new Thread(WorkingPeople)
+                        {
+                            Name = $"Worker Thread-{ptr}"
+                        };
+
+                        threads[ptr].Start();
+                    }
+                }
+            }
+        }
 
         /// <summary>
         /// 开始执行
@@ -54,22 +115,35 @@ namespace Doing.Engine
             if (AimTargets.IsEmpty)
                 throw new Exception.RuntimeException("No target to build!");
 
-            Thread[] worker = new Thread[Program.ThreadCount];
-
-            // 启动线程
-            for(int ptr=0;ptr < worker.Length; ptr++)
+            lock (threadsLocker)
             {
-                worker[ptr] = new Thread(WorkingPeople) {
-                    Name = $"Worker-{ptr}"
-                };
-
-                worker[ptr].Start();
+                threads = new Thread[Program.ThreadCount];
             }
 
-            // 等待
-            foreach(var t in worker)
+            // 初始化线程
+            ReStartThreads();
+
+            // 监察
+            while (true)
             {
-                t.Join();
+                lock (threadsLocker)
+                {
+                    // 检查线程是否都在运行
+                    bool end = true;
+
+                    foreach (var t in threads)
+                    {
+                        if (t.IsAlive)
+                        {
+                            end = false;
+                            break;
+                        }
+                    }
+
+                    if (end)
+                        break;
+                }
+                Thread.Sleep(50);
             }
 
             // 有错误
@@ -104,7 +178,7 @@ namespace Doing.Engine
                     // 检查完成列表
                     bool IsFinish = true;
 
-                    lock (locker)
+                    lock (finishListLocker)
                     {
                         // 检查前置是否完成
                         foreach (var dep in result.Deps)
@@ -153,7 +227,7 @@ namespace Doing.Engine
                     }
 
                     // 添加到完成列表
-                    lock (locker)
+                    lock (finishListLocker)
                         finishList.Add(target.Name);
                     
                 }
@@ -164,9 +238,9 @@ namespace Doing.Engine
                 Tool.Printer.ErrLine($"*** {Thread.CurrentThread.Name} Error!");
 
                 if (target != null)
-                    Tool.Printer.ErrLine($"At file {target.FileName} StartLines {target.StartLine}");
+                    Tool.Printer.ErrLine($"*** At file {target.FileName} StartLines {target.StartLine}");
 
-                Tool.Printer.ErrLine($"{err.ToString().Replace("{", "{{")}");
+                Tool.Printer.ErrLine(err.ToString().Replace("{", "{{").Replace("}","}}"));
             }
         }
     }

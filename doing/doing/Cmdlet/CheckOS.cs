@@ -12,6 +12,7 @@ namespace Doing.Cmdlet
     [Cmdlet("Check","Unix")]
     public class CheckUnix : System.Management.Automation.Cmdlet
     {
+        public const string CallName = "Check-Unix";
 
         protected override void ProcessRecord()
         {
@@ -28,6 +29,7 @@ namespace Doing.Cmdlet
     [Cmdlet("Check", "Win")]
     public class CheckWin : System.Management.Automation.Cmdlet
     {
+        public const string CallName = "Check-Win";
 
         protected override void ProcessRecord()
         {
@@ -42,6 +44,7 @@ namespace Doing.Cmdlet
     [Cmdlet("Check", "Mac")]
     public class CheckMac : System.Management.Automation.Cmdlet
     {
+        public const string CallName = "Check-Mac";
 
         protected override void ProcessRecord()
         {
@@ -56,6 +59,7 @@ namespace Doing.Cmdlet
     [Cmdlet("Check", "Linux")]
     public class CheckLinux : System.Management.Automation.Cmdlet
     {
+        public const string CallName = "Check-Linux";
 
         protected override void ProcessRecord()
         {
@@ -66,11 +70,5 @@ namespace Doing.Cmdlet
             else WriteObject(false);
         }
     }
-
-
-
-
-
-
 
 }
