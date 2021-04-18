@@ -8,7 +8,6 @@
 
 using System.Collections.Generic;
 
-
 namespace Doing.Algorithm
 {
     public static class Topological
@@ -24,10 +23,9 @@ namespace Doing.Algorithm
             Engine.Target[] total)
         {
             Dictionary<Engine.Target, bool> buf =
-                new ();
-
-            Queue<Engine.Target> output = new();
-
+                new();
+            
+            Queue<Engine.Target> output = new ();
 
             // 挨个处理
             foreach (var visit in source)
@@ -50,14 +48,15 @@ namespace Doing.Algorithm
             {
                 if (isMade)
                 {
-                    throw new Exception.RuntimeException($"Circular dependency detected. At target `{visiter.Name}`.");
+                    throw new Exception.RuntimeException($"Circular dependency detected at target `{visiter.Name}`.");
                 }
-                else return;
+                else
+                {
+                    return;
+                }
             }
             else
             {
-                buf.Add(visiter, true);
-
                 // 检查依赖
                 foreach (var depStr in visiter.Deps)
                 {
@@ -74,12 +73,15 @@ namespace Doing.Algorithm
                     }
 
                     if (dep == null)
-                        throw new Exception.RuntimeException($"Miss depend `{depStr}` in target `{visiter.Name}` !");
+                    {
+                        throw new Exception.RuntimeException($"Target `{visiter.Name}` depends on `{depStr}`, but it doesn't exist in this scope.");
+                    }
 
                     // 检查依赖的依赖
                     Visit(total, dep, buf, output);
                 }
-
+                
+                buf.Add(visiter, true);
                 output.Enqueue(visiter);
                 buf.Remove(visiter);
                 buf.Add(visiter, false);
