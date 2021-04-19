@@ -1,5 +1,14 @@
-﻿using System;
+﻿//===========================================================
+// 这个文件来自 GOSCPS(https://github.com/GOSCPS)
+// 使用 GOSCPS 许可证
+// File:    Target.cs
+// Content: Target Source File
+// Copyright (c) 2020-2021 GOSCPS 保留所有权利.
+//===========================================================
+
+using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -7,33 +16,121 @@ using System.Threading.Tasks;
 namespace Doing.Engine
 {
     /// <summary>
-    /// doing标准Target类
+    /// 构建行信息
+    /// </summary>
+    public class BuildLineInfo
+    {
+        /// <summary>
+        /// 访问锁
+        /// </summary>
+        public object Locker { get; set; } = new();
+
+        /// <summary>
+        /// 行号
+        /// </summary>
+        public int LineNumber = 0;
+
+        /// <summary>
+        /// 源行
+        /// </summary>
+        public string Source = "";
+
+        /// <summary>
+        /// 源文件位置
+        /// </summary>
+        public BuildFileInfo Position { get; set; }
+
+        public BuildLineInfo(BuildFileInfo pos)
+        {
+            Position = pos;
+        }
+    }
+
+    /// <summary>
+    /// 构建文件信息
+    /// </summary>
+    public class BuildFileInfo
+    {
+        /// <summary>
+        /// 访问锁
+        /// </summary>
+        public object Locker { get; } = new();
+
+        /// <summary>
+        /// 源文件
+        /// </summary>
+        public FileInfo SourceFile { get; init; }
+
+        /// <summary>
+        /// 源文件行
+        /// </summary>
+        public BuildLineInfo[] AllLines { get; set; } = Array.Empty<BuildLineInfo>();
+
+        /// <summary>
+        /// Target列表
+        /// </summary>
+        public Target[] AllTargets { get; set; } = Array.Empty<Target>();
+
+        /// <summary>
+        /// 主Main
+        /// </summary>
+        public Target? MainTarget = null;
+
+        /// <summary>
+        /// Main是否已经构建过
+        /// </summary>
+        public bool IsMainBuilt = false;
+
+        public BuildFileInfo(FileInfo source)
+        {
+            SourceFile = source;
+        }
+    }
+
+    /// <summary>
+    /// 目标
     /// </summary>
     public class Target
     {
         /// <summary>
+        /// 访问锁
+        /// </summary>
+        public object RunLocker { get; } = new();
+
+        /// <summary>
         /// Target名称
         /// </summary>
-        public string Name { get; set; } = "#Unknown#";
+        public string Name { get; init; } = "#Unknown#";
 
         /// <summary>
-        /// Target依赖
+        /// 定义行
         /// </summary>
-        public string[] Deps { get; set; } = Array.Empty<string>();
+        public BuildLineInfo DefineLine { get; init; }
 
         /// <summary>
-        /// 文件名称
+        /// 依赖
         /// </summary>
-        public string FileName { get; set; } = "Unknown";
-
-        /// <summary>
-        /// 起始行号
-        /// </summary>
-        public int StartLine { get; set; } = 0;
+        public string[] Deps { get; init; } = Array.Empty<string>();
 
         /// <summary>
         /// 源代码
         /// </summary>
-        public string SourceCode { get; set; } = string.Empty;
+        public string Source { get; init; } = "";
+
+        public Target(
+            BuildLineInfo defined,string source,string name,string[] deps)
+        {
+            DefineLine = defined;
+            Source = source;
+            Name = name;
+            Deps = deps;
+        }
+
+        /// <summary>
+        /// 执行
+        /// </summary>
+        public virtual void Execute() {
+            PowerShellRuner.ExecuteTarget(this);
+        }
     }
 }

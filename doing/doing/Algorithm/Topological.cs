@@ -50,7 +50,7 @@ namespace Doing.Algorithm
             {
                 if (isMade)
                 {
-                    throw new Exception.RuntimeException($"Circular dependency detected. At target `{visiter.Name}`.");
+                    throw new DException.RuntimeException($"Circular dependency detected. At target `{visiter.Name}`.");
                 }
                 else return;
             }
@@ -74,7 +74,7 @@ namespace Doing.Algorithm
                     }
 
                     if (dep == null)
-                        throw new Exception.RuntimeException($"Miss depend `{depStr}` in target `{visiter.Name}` !");
+                        throw new DException.RuntimeException($"Miss depend `{depStr}` in target `{visiter.Name}` !");
 
                     // 检查依赖的依赖
                     Visit(total, dep, buf, output);

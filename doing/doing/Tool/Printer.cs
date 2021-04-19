@@ -101,6 +101,11 @@ namespace Doing.Tool
             }
         }
 
+        /// <summary>
+        /// 仅在Debug模式下打印
+        /// </summary>
+        /// <param name="fmt"></param>
+        /// <param name="args"></param>
         public static void Debug(string fmt, params object?[] args)
         {
             if (Program.IsDebug)
@@ -113,6 +118,11 @@ namespace Doing.Tool
                 }
         }
 
+        /// <summary>
+        /// 仅在Debug模式下打印
+        /// </summary>
+        /// <param name="fmt"></param>
+        /// <param name="args"></param>
         public static void DebugLine(string fmt, params object?[] args)
         {
             if (Program.IsDebug)
@@ -123,6 +133,96 @@ namespace Doing.Tool
                     Console.Error.WriteLine(fmt, args);
                     Console.ForegroundColor = colored;
                 }
+        }
+
+        /// <summary>
+        /// 不格式化的输出
+        /// </summary>
+        /// <param name="str"></param>
+        public static void NoFormatErr(string str)
+        {
+            Err(str.Replace("{", "{{").Replace("}", "}}"));
+        }
+
+        /// <summary>
+        /// 不格式化的输出
+        /// </summary>
+        /// <param name="str"></param>
+        public static void NoFormatErrLine(string str)
+        {
+            ErrLine(str.Replace("{", "{{").Replace("}", "}}"));
+        }
+
+        /// <summary>
+        /// 不格式化的输出
+        /// </summary>
+        /// <param name="str"></param>
+        public static void NoFormatPut(string str)
+        {
+            Put(str.Replace("{", "{{").Replace("}", "}}"));
+        }
+
+        /// <summary>
+        /// 不格式化的输出
+        /// </summary>
+        /// <param name="str"></param>
+        public static void NoFormatPutLine(string str)
+        {
+            PutLine(str.Replace("{", "{{").Replace("}", "}}"));
+        }
+
+        /// <summary>
+        /// 不格式化的输出
+        /// </summary>
+        /// <param name="str"></param>
+        public static void NoFormatWarn(string str)
+        {
+            Warn(str.Replace("{", "{{").Replace("}", "}}"));
+        }
+
+        /// <summary>
+        /// 不格式化的输出
+        /// </summary>
+        /// <param name="str"></param>
+        public static void NoFormatWarnLine(string str)
+        {
+            WarnLine(str.Replace("{", "{{").Replace("}", "}}"));
+        }
+
+        /// <summary>
+        /// 不格式化的输出
+        /// </summary>
+        /// <param name="str"></param>
+        public static void NoFormatOk(string str)
+        {
+            Ok(str.Replace("{", "{{").Replace("}", "}}"));
+        }
+
+        /// <summary>
+        /// 不格式化的输出
+        /// </summary>
+        /// <param name="str"></param>
+        public static void NoFormatOkLine(string str)
+        {
+            OkLine(str.Replace("{", "{{").Replace("}", "}}"));
+        }
+
+        /// <summary>
+        /// 不格式化的输出
+        /// </summary>
+        /// <param name="str"></param>
+        public static void NoFormatDebug(string str)
+        {
+            Debug(str.Replace("{", "{{").Replace("}", "}}"));
+        }
+
+        /// <summary>
+        /// 不格式化的输出
+        /// </summary>
+        /// <param name="str"></param>
+        public static void NoFormatDebugLine(string str)
+        {
+            DebugLine(str.Replace("{", "{{").Replace("}", "}}"));
         }
     }
 }

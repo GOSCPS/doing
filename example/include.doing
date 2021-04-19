@@ -1,0 +1,15 @@
+
+@Target Main
+
+	Write-Host "Hello world from main at file `include.doing`."
+	Write-Host "The main will build first"
+	Write-Host "But other target won't wait for main"
+	Write-Host "So you can't use it to a depend."
+
+@EndTarget
+
+@Target Test
+
+	Write-Host "Hello world from test."
+
+@EndTarget

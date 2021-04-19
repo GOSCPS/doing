@@ -1,0 +1,15 @@
+
+##! Import include.doing
+
+@Target Main
+
+	Write-Host "Hello world from main at file `make.doing`."
+
+@EndTarget
+
+# The test target is in file `include.doing`
+@Target Default : Test
+
+	Write-Host "Until now.Doing run well!"
+
+@EndTarget

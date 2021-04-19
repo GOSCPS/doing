@@ -15,7 +15,6 @@ namespace Doing
     public class Program
     {
         private static bool IsDebug_ = false;
-
         /// <summary>
         /// 是否处于Debug模式
         /// </summary>
@@ -30,8 +29,8 @@ namespace Doing
             }
         }
 
-        private static int ThreadCount_ = 1;
 
+        private static int ThreadCount_ = 1;
         /// <summary>
         /// 使用线程数量
         /// </summary>
@@ -47,8 +46,8 @@ namespace Doing
             }
         }
 
-        private static string BuildFile_ = "make.doing";
 
+        private static string BuildFile_ = "make.doing";
         /// <summary>
         /// 构建的文件
         /// </summary>
@@ -64,39 +63,23 @@ namespace Doing
             }
         }
 
-        private static System.Collections.Concurrent.ConcurrentDictionary<string,string> GlobalVars_ = new();
 
         /// <summary>
         /// 变量表
         /// </summary>
         public static System.Collections.Concurrent.ConcurrentDictionary<string, string> GlobalVars
         {
-            get
-            {
-                return GlobalVars_;
-            }
-            private set
-            {
-                GlobalVars_ = value;
-            }
-        }
+            get;
+        } = new();
 
-        private static List<string> AimTargets_ = new();
 
         /// <summary>
         /// 构建目标
         /// </summary>
         public static List<string> AimTargets
         {
-            get
-            {
-                return AimTargets_;
-            }
-            private set
-            {
-                AimTargets_ = value;
-            }
-        }
+            get;
+        } = new();
 
 
         /// <summary>
@@ -119,6 +102,7 @@ namespace Doing
             }
         }
 
+
         /// <summary>
         /// 打印帮助
         /// </summary>
@@ -136,6 +120,7 @@ namespace Doing
             Tool.Printer.PutLine("\t--nologo\t\tNot output the logo.");
         }
 
+
         /// <summary>
         /// 打印信息
         /// </summary>
@@ -143,8 +128,8 @@ namespace Doing
         {
             Tool.Printer.PutLine($"Doing version {DoingVersion}");
             Tool.Printer.PutLine($"Built-in PowerShell version {System.Management.Automation.PSVersionInfo.PSVersion}");
-            
         }
+
 
         /// <summary>
         /// 入口函数
@@ -158,7 +143,7 @@ namespace Doing
 
                 foreach (var arg in args)
                 {
-
+                    // 一些小杂碎的事情
                     if (arg == "--help" || arg == "-h")
                     {
                         PrintHelp();
@@ -197,6 +182,7 @@ namespace Doing
                             }
                             else ThreadCount = count;
                         }
+                        // 错误的格式
                         else
                         {
                             Tool.Printer.ErrLine("The thread count isn't a right format!");
@@ -221,35 +207,43 @@ namespace Doing
                         // 格式:-d[KEY=VALUE]
                         string keyValue = arg[2..];
 
+                        // 没有=
                         if (!keyValue.Contains('='))
                         {
-                            Tool.Printer.ErrLine($"The define usage error:{arg}");
+                            Tool.Printer.NoFormatErrLine($"The define usage error:{arg}");
                             return -1;
                         }
 
                         string key = keyValue[0..(keyValue.IndexOf('='))];
                         string value = keyValue[(keyValue.IndexOf('=') + 1)..];
 
+                        // 变量已经存在
                         if (GlobalVars.ContainsKey(key))
                         {
-                            Tool.Printer.ErrLine($"The global variable is defined:{arg}");
+                            Tool.Printer.NoFormatErrLine($"The global variable is defined:{arg}");
                             return -1;
                         }
                         else GlobalVars.TryAdd(key, value);
                     }
+                    // 非-开头
                     // Target
                     else if (!arg.StartsWith('-'))
                     {
                         if (!AimTargets.Contains(arg))
                             AimTargets.Add(arg);
+
+                        // Target已定义
+                        else Tool.Printer.WarnLine("The target is defined:{0}",arg);
                     }
+                    // 位置指令
                     else
                     {
-                        Tool.Printer.ErrLine($"Unknown param:{arg}");
+                        Tool.Printer.NoFormatErrLine($"Unknown param:{arg}");
                         return -1;
                     }
                 }
 
+                // 打印logo
                 if (isPrintLogo)
                 {
                     Tool.Printer.PutLine("*** Doing Build System ***");
@@ -263,27 +257,22 @@ namespace Doing
 
             try
             {
-                Engine.Parser.Parsing();
-
-                // 构建失败
-                if (!Engine.Runner.StartRunner())
-                {
-                    timer.Stop();
-                    Tool.Printer.ErrLine("Build error!");
-                    Tool.Printer.PutLine($"Use {timer.Elapsed:G}");
-                    return -1;
-                }
+                Engine.Parsing.Parse();
+                Engine.Worker.Run();
             }
-            catch (System.Exception err)
+            catch (Exception err)
             {
                 timer.Stop();
-                Tool.Printer.ErrLine("Build error!");
-                Tool.Printer.ErrLine(err.ToString().Replace("{","{{"));
+                Tool.Printer.ErrLine("Failed build!");
+
+                if(IsDebug)
+                    Tool.Printer.NoFormatErrLine(err.ToString());
+
                 Tool.Printer.PutLine($"Use {timer.Elapsed:G}");
                 return -1;
             }
             timer.Stop();
-            Tool.Printer.OkLine("Build OK!");
+            Tool.Printer.OkLine("Successfully build!");
             Tool.Printer.OkLine($"Use {timer.Elapsed:G}");
 
 
