@@ -84,14 +84,23 @@ namespace Doing.Engine
         public Target? MainTarget = null;
 
         /// <summary>
+        /// 运行空间
+        /// </summary>
+        public Runspace SourceRunspace { get; init; }
+
+        /// <summary>
         /// Main是否已经构建过
         /// </summary>
         public bool IsMainBuilt = false;
 
-        public BuildFileInfo(FileInfo source)
+        public BuildFileInfo(
+            FileInfo source,
+            Runspace runspace)
         {
             SourceFile = source;
+            SourceRunspace = runspace;
         }
+
     }
 
 
@@ -125,13 +134,19 @@ namespace Doing.Engine
         /// </summary>
         public string Source { get; init; } = "";
 
+        /// <summary>
+        /// 运行空间
+        /// </summary>
+        public Runspace TargetRunspace { get; init; }
+
         public Target(
-            BuildLineInfo defined,string source,string name,string[] deps)
+            BuildLineInfo defined,Runspace runspace,string source,string name,string[] deps)
         {
             DefineLine = defined;
             Source = source;
             Name = name;
             Deps = deps;
+            TargetRunspace = runspace;
         }
 
         /// <summary>
@@ -146,7 +161,7 @@ namespace Doing.Engine
 
                 // 添加Cmdlet和Function
                 Cmdlet.StandardCmdlet.AddStandardCmdlet(iss);
-                Runspace.AddFunctions(iss);
+                TargetRunspace.AddFunctions(iss);
 
                 TargetExecuter.CreatePwsh(Runspace.CreateRunspace(iss), runer);
 
@@ -187,11 +202,18 @@ namespace Doing.Engine
             /// </summary>
             public string Source { get; init; } = "";
 
-            public Function(BuildLineInfo defLine,string name,string body)
+            /// <summary>
+            /// 运行空间
+            /// </summary>
+            public Runspace FunctionRunspace { get; init; }
+
+            public Function(
+                BuildLineInfo defLine,Runspace runspace,string name,string body)
             {
                 DefineLine = defLine;
                 Name = name;
                 Source = body;
+                FunctionRunspace = runspace;
             }
         }
 

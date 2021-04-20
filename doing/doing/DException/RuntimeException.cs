@@ -21,17 +21,32 @@ namespace Doing.DException
     public class RuntimeException : Exception
     {
         public string Msg { get; init; }
+        public new Exception? InnerException { get; init; } = null;
 
         public RuntimeException(string msg) : base(msg)
         {
-            this.Msg = msg;
+            Msg = msg;
+        }
+        public RuntimeException(string msg, Exception inner) : base(msg,inner)
+        {
+            Msg = msg;
+            InnerException = inner;
         }
 
         public override string ToString()
         {
-            if (Program.IsDebug)
-                return base.ToString();
-            else return "*** " + Msg;
+            if (InnerException == null)
+                
+                if (Program.IsDebug)
+                    return base.ToString();
+                else 
+                    return "*** " + Msg;
+
+            else
+                if (Program.IsDebug)
+                    return base.ToString();
+                else 
+                    return "*** " + Msg + "\n" + InnerException.ToString();
         }
 
     }

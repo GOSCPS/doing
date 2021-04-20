@@ -10,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Management.Automation.Runspaces;
 using System.Runtime.InteropServices.ComTypes;
 using System.Security.Cryptography;
 using System.Text;
@@ -34,7 +35,8 @@ namespace Doing.Engine
         /// 预处理
         /// </summary>
         /// <returns></returns>
-        private static BuildFileInfo[]? PreProcess(string fileName)
+        private static BuildFileInfo[]? PreProcess(
+            string fileName,Runspace runspace)
         {
             // 取绝对路径
             fileName = Path.GetFullPath(fileName.Trim());
@@ -50,8 +52,8 @@ namespace Doing.Engine
             // 文件不存在则退出
             if (!File.Exists(fileName))
             {
-                Tool.Printer.NoFormatErrLine($"Import file `{fileName}` not found!");
-                throw new FileNotFoundException("File Not Found!", fileName);
+                throw new DException.RuntimeException("File not found!",
+                    new FileNotFoundException("File Not Found!", fileName));
             }
 
             // 行
@@ -62,7 +64,7 @@ namespace Doing.Engine
             List<BuildFileInfo> filesInfo = new();
 
             // 当前处理的文件
-            BuildFileInfo currentFile = new(new FileInfo(fileName));
+            BuildFileInfo currentFile = new(new FileInfo(fileName),runspace);
 
             // 总行
             string[] lines = File.ReadAllLines(fileName);
@@ -87,16 +89,16 @@ namespace Doing.Engine
                         {
                             // 当前(参数)文件所在目录/Import文件路径 
                             var fs = 
-                                PreProcess(Path.GetDirectoryName(fileName) + "/" + preCommand["Import".Length..].Trim());
+                                PreProcess(Path.GetDirectoryName(fileName) + "/" + preCommand["Import".Length..].Trim(), runspace);
 
                             // 添加到文件列表
                             if (fs != null)
                                 filesInfo.AddRange(fs);
                         }
-                        catch (FileNotFoundException f)
+                        catch (Exception)
                         {
                             Tool.Printer.NoFormatErrLine($"File Not Include!\nAt File `{fileName}` Lines {lineNumber}");
-                            Tool.Printer.NoFormatErrLine($"The miss file name is:`{f.FileName}`");
+
                             throw;
                         }
                     }
@@ -156,10 +158,6 @@ namespace Doing.Engine
                         new DException.RuntimePositionException("The target name is unlawful!",
                         definedLine);
 
-                //target = new(buildFile.AllLines[lineNumber])
-                //{
-                //Name = named,
-                //};
                 info = new(named, Array.Empty<string>());
 
                 // 错误❌
@@ -220,11 +218,6 @@ namespace Doing.Engine
                             definedLine);
                 }
 
-                //target = new(buildFile.AllLines[lineNumber])
-                //{
-                //    Name = named,
-                //    Deps = deps
-                //};
                 info = new(named, deps);
 
                 // 错误❌
@@ -269,7 +262,7 @@ namespace Doing.Engine
         /// <summary>
         /// 函数定义的正则表达式
         /// </summary>
-        private static readonly Regex functionRegex = new(@"@Function\s+(?<Name>[])\s+");
+        private static readonly Regex functionRegex = new(@"^@Function\s+(?<Name>[a-zA-Z0-9-_]+)\s*$");
 
         private static bool
             TryParseFunctionDefine(BuildLineInfo defLine,out string? funcNamed)
@@ -277,7 +270,7 @@ namespace Doing.Engine
             funcNamed = default;
             if (functionRegex.IsMatch(defLine.Source))
             {
-                Match match = targetRegex.Match(defLine.Source);
+                Match match = functionRegex.Match(defLine.Source);
 
                 // only one matches
                 string named = match.Groups["Name"].Value.Trim();
@@ -312,7 +305,8 @@ namespace Doing.Engine
         /// </summary>
         /// 
         /// <param name="buildFile">构建的文件</param>
-        public static void Process(BuildFileInfo buildFile)
+        public static void Process(
+            BuildFileInfo buildFile,Runspace runspace)
         {
             // 查找到的Target和Function
             Dictionary<string, Target> allTargets = new();
@@ -357,7 +351,7 @@ namespace Doing.Engine
                     }
 
                     // 添加Target
-                    Target target = new(definedLine, sourceCode.ToString(), info.name, info.deps);
+                    Target target = new(definedLine, runspace, sourceCode.ToString(), info.name, info.deps);
 
                     if (allTargets.TryGetValue(target!.Name, out Target? def))
                     {
@@ -387,7 +381,7 @@ namespace Doing.Engine
                                 buildFile.AllLines[^1]);
                         }
                         // 结尾
-                        else if (buildFile.AllLines[lineNumber].Source.Trim() == "@EndTarget")
+                        else if (buildFile.AllLines[lineNumber].Source.Trim() == "@EndFunction")
                         {
                             break;
                         }
@@ -400,7 +394,7 @@ namespace Doing.Engine
                     }
 
                     // 添加Target
-                    Function function = new(definedLine, sourceCode.ToString(), funcName!);
+                    Function function = new(definedLine, runspace, funcName!, sourceCode.ToString());
 
                     if (allFunctions.TryGetValue(function!.Name, out Function? def))
                     {
@@ -437,36 +431,48 @@ namespace Doing.Engine
             buildFile.AllFunction = allFunctions.Values.ToArray();
         }
 
-
-        public static void ParseMain()
+        /// <summary>
+        /// 加载文件到运行空间(包括依赖)
+        /// </summary>
+        /// 
+        /// <param name="runspace"></param>
+        /// <param name="fileName"></param>
+        public static void LoadFileToRunspace(
+            Runspace runspace,
+            string fileName)
         {
-            var info = Parse(Program.BuildFile);
+            var info = ParseFile(fileName, runspace);
 
             // 添加到Runspace
             foreach (var file in info.Item1)
             {
-                Runspace.SourceFile.TryAdd(file.SourceFile.FullName, file);
+                runspace.SourceFile.TryAdd(file.SourceFile.FullName, file);
             }
             foreach (var target in info.Item2)
             {
-                Runspace.AllTarget.TryAdd(target.Name, target);
+                runspace.AllTarget.TryAdd(target.Name, target);
             }
             foreach(var function in info.Item3)
             {
-                Runspace.AllFunction.TryAdd(function.Name, function);
-            }
+                runspace.AllFunction.TryAdd(function.Name, function);
+}
 
             // 处理依赖
-            MakeRunspaceDeps();
+            MakeRunspaceDeps(runspace);
+
+            return;
         }
 
         /// <summary>
-        /// 解析
+        /// 解析文件
         /// </summary>
-        public static (BuildFileInfo[],Target[],Function[]) Parse(string fileName)
+        /// <param name="runspace">命名空间，将会绑定</param>
+        /// <param name="fileName">要处理的文件名称</param>
+        public static (BuildFileInfo[],Target[],Function[]) ParseFile(
+            string fileName,Runspace runspace)
         {
             // 获取文件列表
-            BuildFileInfo[] fileInfo = PreProcess(fileName)!;
+            BuildFileInfo[] fileInfo = PreProcess(fileName, runspace)!;
 
             // 导出Target
             Dictionary<string, Target> targetTable = new();
@@ -474,7 +480,7 @@ namespace Doing.Engine
             // 负责检查重名Target
             foreach (var f in fileInfo)
             {
-                Process(f);
+                Process(f, runspace);
                 var targets = f.AllTargets;
 
                 // 检查重名Target
@@ -497,7 +503,6 @@ namespace Doing.Engine
             // 负责检查重名Function
             foreach (var f in fileInfo)
             {
-                Process(f);
                 var functions = f.AllFunction;
 
                 // 检查重名Function
@@ -520,7 +525,7 @@ namespace Doing.Engine
         /// <summary>
         /// 处理依赖
         /// </summary>
-        public static void MakeRunspaceDeps()
+        public static void MakeRunspaceDeps(Runspace runspace)
         {
             // 用户未指定
             // 添加Default Target
@@ -534,24 +539,25 @@ namespace Doing.Engine
             List<Target> aims = new();
             foreach(var t in Program.AimTargets)
             {
-                if (Runspace.AllTarget.TryGetValue(t, out Target? value))
+                if (runspace.AllTarget.TryGetValue(t, out Target? value))
                 {
                     aims.Add(value);
                 }
                 else throw new DException.RuntimeException($"The aim target `{t}` not found!");
             }
 
+
             // 添加依赖
-            foreach(var t in Algorithm.Topological.Sort(aims.ToArray(), Runspace.AllTarget.Values.ToArray()))
+            foreach (var t in Algorithm.Topological.Sort(aims.ToArray(), runspace.AllTarget.Values.ToArray()))
             {
-                if (!Runspace.AimTarget.TryAdd(t.Name, t))
+                if (!runspace.AimTarget.TryAdd(t.Name, t))
                 {
                     throw new DException.RuntimeException($"Add aim target `{t.Name}` error!");
                 }
             }
 
-            // 查找Main
-            foreach(var target in Runspace.AimTarget.Values)
+            // 查找&添加Main
+            foreach(var target in runspace.AimTarget.Values)
             {
                 if(target.DefineLine.Position.MainTarget != null
                     && target.DefineLine.Position.IsMainBuilt == false)
@@ -562,7 +568,7 @@ namespace Doing.Engine
             }
 
             // 添加到Worker
-            foreach(var target in Runspace.AimTarget)
+            foreach(var target in runspace.AimTarget)
             {
                 Worker.AddTarget(target.Value);
             }

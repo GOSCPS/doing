@@ -257,16 +257,19 @@ namespace Doing
 
             try
             {
-                Engine.Parsing.ParseMain();
+                Engine.Parsing.LoadFileToRunspace(
+                    Engine.MainRunspace.Get(),BuildFile);
+                
                 Engine.Worker.Run();
             }
             catch (Exception err)
             {
                 timer.Stop();
-                Tool.Printer.ErrLine("Failed build!");
+                Tool.Printer.ErrLine("Failed build!\nException:\n```");
 
-                if(IsDebug)
-                    Tool.Printer.NoFormatErrLine(err.ToString());
+                Tool.Printer.NoFormatErrLine(err.ToString());
+
+                Tool.Printer.ErrLine("```");
 
                 Tool.Printer.PutLine($"Use {timer.Elapsed:G}");
                 return -1;

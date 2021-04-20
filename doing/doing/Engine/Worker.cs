@@ -111,7 +111,7 @@ namespace Doing.Engine
         /// </summary>
         /// 
         /// <returns>如果返回null，则不能获取任务</returns>
-        public static Target? GetTask()
+        private static Target? GetTask()
         {
             // 错误则不再继续构建
             if (!errList.IsEmpty)
@@ -150,7 +150,7 @@ namespace Doing.Engine
         /// <summary>
         /// 工作线程
         /// </summary>
-        public static void WorkThreadMethod()
+        private static void WorkThreadMethod()
         {
             Target? target = null;
 
@@ -181,7 +181,7 @@ namespace Doing.Engine
                 Tool.Printer.NoFormatErrLine($"*** {Thread.CurrentThread.Name} Error!");
 
                 if (target != null)
-                    Tool.Printer.NoFormatErrLine($"*** At {target.DefineLine.Position.SourceFile.FullName} " +
+                    Tool.Printer.NoFormatErrLine($"*** In target `{target.Name}` At {target.DefineLine.Position.SourceFile.FullName} " +
                         $"StartLines {target.DefineLine.LineNumber}");
 
                 Tool.Printer.NoFormatErrLine(err.ToString());

@@ -19,7 +19,7 @@ namespace Doing.Algorithm
         /// </summary>
         /// <param name="source"></param>
         /// <returns></returns>
-        public static Engine.Target[] Sort(
+        public static Queue<Engine.Target> Sort(
             Engine.Target[] source,
             Engine.Target[] total)
         {
@@ -35,7 +35,7 @@ namespace Doing.Algorithm
                 Visit(total, visit, buf, output);
             }
 
-            return output.ToArray();
+            return output;
         }
 
         private static void Visit(
@@ -80,6 +80,7 @@ namespace Doing.Algorithm
                     Visit(total, dep, buf, output);
                 }
 
+                // 添加依赖
                 output.Enqueue(visiter);
                 buf.Remove(visiter);
                 buf.Add(visiter, false);

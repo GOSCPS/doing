@@ -24,10 +24,18 @@ namespace Doing.Cmdlet
 
         public static void AddStandardCmdlet(InitialSessionState state)
         {
-           
 
+            state.Commands.Add(
+                new SessionStateCmdletEntry(
+                    CompareVersion.CallName,
+                    typeof(CompareVersion),
+                    null));
 
-
+            state.Commands.Add(
+                new SessionStateCmdletEntry(
+                    GetVersion.CallName,
+                    typeof(GetVersion),
+                    null));
         }
 
 

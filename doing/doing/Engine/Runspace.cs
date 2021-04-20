@@ -19,16 +19,36 @@ using static Doing.Engine.Target;
 namespace Doing.Engine
 {
     /// <summary>
+    /// 主Runspace
+    /// </summary>
+    public static class MainRunspace
+    {
+        /// <summary>
+        /// Main
+        /// </summary>
+        private static readonly Runspace mainRunspace = new();
+
+        /// <summary>
+        /// 获取主运行空间
+        /// </summary>
+        /// <returns></returns>
+        public static Runspace Get()
+        {
+            return mainRunspace;
+        }
+    }
+
+    /// <summary>
     /// 运行空间
     /// </summary>
-    public static class Runspace
+    public class Runspace
     {
         /// <summary>
         /// 源文件
         /// key = FileInfo.FullName
         /// value = 对应文件名称的BuildFileInfo
         /// </summary>
-        public static ConcurrentDictionary<string, BuildFileInfo> SourceFile
+        public ConcurrentDictionary<string, BuildFileInfo> SourceFile
         { get; } = new();
 
         /// <summary>
@@ -36,7 +56,7 @@ namespace Doing.Engine
         /// key = Target.Name,
         /// value = Target
         /// </summary>
-        public static ConcurrentDictionary<string, Target> AllTarget
+        public ConcurrentDictionary<string, Target> AllTarget
         { get; } = new();
 
         /// <summary>
@@ -44,7 +64,7 @@ namespace Doing.Engine
         /// key = Target.name
         /// value = Target
         /// </summary>
-        public static ConcurrentDictionary<string, Target> AimTarget
+        public ConcurrentDictionary<string, Target> AimTarget
         { get; } = new();
 
         /// <summary>
@@ -52,8 +72,20 @@ namespace Doing.Engine
         /// key = Function.Name
         /// value = Function
         /// </summary>
-        public static ConcurrentDictionary<string, Function> AllFunction
+        public ConcurrentDictionary<string, Function> AllFunction
         { get; } = new();
+
+        /// <summary>
+        /// 注册函数
+        /// </summary>
+        /// <param name="state"></param>
+        public void AddFunctions(InitialSessionState state)
+        {
+            foreach(var func in AllFunction)
+            {
+                state.Commands.Add(new SessionStateFunctionEntry(func.Key, func.Value.Source));
+            }
+        }
 
         /// <summary>
         /// 初始化Pwsh运行空间
@@ -64,18 +96,6 @@ namespace Doing.Engine
             var spc = RunspaceFactory.CreateRunspace(sessionState);
             spc.Open();
             return spc;
-        }
-
-        /// <summary>
-        /// 注册函数
-        /// </summary>
-        /// <param name="state"></param>
-        public static void AddFunctions(InitialSessionState state)
-        {
-            foreach(var func in AllFunction)
-            {
-                state.Commands.Add(new SessionStateFunctionEntry(func.Key, func.Value.Source));
-            }
         }
     }
 
