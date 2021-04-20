@@ -10,8 +10,10 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Management.Automation.Runspaces;
 using System.Text;
 using System.Threading.Tasks;
+using static Doing.Engine.Target;
 
 namespace Doing.Engine
 {
@@ -72,6 +74,11 @@ namespace Doing.Engine
         public Target[] AllTargets { get; set; } = Array.Empty<Target>();
 
         /// <summary>
+        /// 函数列表
+        /// </summary>
+        public Function[] AllFunction { get; set; } = Array.Empty<Function>();
+
+        /// <summary>
         /// 主Main
         /// </summary>
         public Target? MainTarget = null;
@@ -86,6 +93,7 @@ namespace Doing.Engine
             SourceFile = source;
         }
     }
+
 
     /// <summary>
     /// 目标
@@ -130,7 +138,62 @@ namespace Doing.Engine
         /// 执行
         /// </summary>
         public virtual void Execute() {
-            PowerShellRuner.ExecuteTarget(this);
+            lock (RunLocker)
+            {
+                // 创建运行空间
+                TargetExecuter runer = new(this);
+                InitialSessionState iss = InitialSessionState.CreateDefault();
+
+                // 添加Cmdlet和Function
+                Cmdlet.StandardCmdlet.AddStandardCmdlet(iss);
+                Runspace.AddFunctions(iss);
+
+                TargetExecuter.CreatePwsh(Runspace.CreateRunspace(iss), runer);
+
+                // 清除之前的输出和命令
+                runer.shell!.Commands.Clear();
+                runer.shell!.Streams.ClearStreams();
+                runer.pwshOutput.Clear();
+
+                // 调用命令
+                runer.shell!.AddScript(Source);
+
+                runer.shell!.Invoke(null, runer.pwshOutput);
+
+                // 调用错误
+                if (runer.shell!.HadErrors)
+                    throw new DException.RuntimePositionException(
+                        "The PowerShell return error!",DefineLine);
+            }
         }
+
+        /// <summary>
+        /// pwsh函数
+        /// </summary>
+        public class Function
+        {
+            /// <summary>
+            /// Target名称
+            /// </summary>
+            public string Name { get; init; } = "#Unknown#";
+
+            /// <summary>
+            /// 定义行
+            /// </summary>
+            public BuildLineInfo DefineLine { get; init; }
+
+            /// <summary>
+            /// 源代码
+            /// </summary>
+            public string Source { get; init; } = "";
+
+            public Function(BuildLineInfo defLine,string name,string body)
+            {
+                DefineLine = defLine;
+                Name = name;
+                Source = body;
+            }
+        }
+
     }
 }

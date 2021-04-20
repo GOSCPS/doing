@@ -257,7 +257,7 @@ namespace Doing
 
             try
             {
-                Engine.Parsing.Parse();
+                Engine.Parsing.ParseMain();
                 Engine.Worker.Run();
             }
             catch (Exception err)

@@ -204,6 +204,7 @@ namespace Doing.Engine
             // 监视线程
             while (true)
             {
+                // 所有线程死亡则退出
                 lock (locker)
                 {
                     bool allDeath = true;

@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 using System.Management.Automation;
 using System.Collections.Concurrent;
 using System.Management.Automation.Runspaces;
+using static Doing.Engine.Target;
 
 namespace Doing.Engine
 {
@@ -24,25 +25,61 @@ namespace Doing.Engine
     {
         /// <summary>
         /// 源文件
+        /// key = FileInfo.FullName
+        /// value = 对应文件名称的BuildFileInfo
         /// </summary>
         public static ConcurrentDictionary<string, BuildFileInfo> SourceFile
         { get; } = new();
 
         /// <summary>
         /// 所有Target
+        /// key = Target.Name,
+        /// value = Target
         /// </summary>
-        public static ConcurrentDictionary<string, Target> AllTargets
+        public static ConcurrentDictionary<string, Target> AllTarget
         { get; } = new();
 
         /// <summary>
         /// 目标Target
+        /// key = Target.name
+        /// value = Target
         /// </summary>
-        public static ConcurrentDictionary<string, Target> AimTargets
+        public static ConcurrentDictionary<string, Target> AimTarget
         { get; } = new();
 
+        /// <summary>
+        /// 用户自定义函数
+        /// key = Function.Name
+        /// value = Function
+        /// </summary>
+        public static ConcurrentDictionary<string, Function> AllFunction
+        { get; } = new();
+
+        /// <summary>
+        /// 初始化Pwsh运行空间
+        /// </summary>
+        public static System.Management.Automation.Runspaces.Runspace CreateRunspace(
+            InitialSessionState sessionState)
+        {
+            var spc = RunspaceFactory.CreateRunspace(sessionState);
+            spc.Open();
+            return spc;
+        }
+
+        /// <summary>
+        /// 注册函数
+        /// </summary>
+        /// <param name="state"></param>
+        public static void AddFunctions(InitialSessionState state)
+        {
+            foreach(var func in AllFunction)
+            {
+                state.Commands.Add(new SessionStateFunctionEntry(func.Key, func.Value.Source));
+            }
+        }
     }
 
-    public class PowerShellRuner
+    public class TargetExecuter
     {
         /// <summary>
         /// 源文件基础行号
@@ -57,28 +94,17 @@ namespace Doing.Engine
         /// <summary>
         /// 输出流
         /// </summary>
-        private readonly PSDataCollection<PSObject> pwshOutput = new();
+        public readonly PSDataCollection<PSObject> pwshOutput = new();
 
         /// <summary>
         /// pwsh
         /// </summary>
-        private PowerShell? shell = null;
+        public PowerShell? shell = null;
 
-        public PowerShellRuner(Target target)
+        public TargetExecuter(Target target)
         {
             BaseFile = target.DefineLine.Position.SourceFile.FullName;
             BaseLine = target.DefineLine.LineNumber;
-        }
-
-        /// <summary>
-        /// 初始化Pwsh运行空间
-        /// </summary>
-        public static System.Management.Automation.Runspaces.Runspace CreateRunspace(
-            InitialSessionState sessionState)
-        {
-            var spc = RunspaceFactory.CreateRunspace(sessionState);
-            spc.Open();
-            return spc;
         }
 
         /// <summary>
@@ -87,7 +113,7 @@ namespace Doing.Engine
         /// <returns></returns>
         public static void CreatePwsh(
             System.Management.Automation.Runspaces.Runspace runspace,
-            PowerShellRuner runer)
+            TargetExecuter runer)
         {
             PowerShell pwsh = PowerShell.Create(runspace);
 
@@ -134,37 +160,6 @@ namespace Doing.Engine
             runer.shell = pwsh;
 
             return;
-        }
-
-        /// <summary>
-        /// 执行一个Target
-        /// </summary>
-        /// <returns></returns>
-        public static bool ExecuteTarget(Target target)
-        {
-            // 同一个targe只允许同时有一个在执行
-            lock (target.RunLocker)
-            {
-                PowerShellRuner runer = new(target);
-                InitialSessionState iss = InitialSessionState.CreateDefault();
-                Cmdlet.StandardCmdlet.AddStandardCmdlet(iss);
-                CreatePwsh(CreateRunspace(iss), runer);
-
-                // 清除之前的输出和命令
-                runer.shell!.Commands.Clear();
-                runer.shell!.Streams.ClearStreams();
-                runer.pwshOutput.Clear();
-
-                // 调用命令
-                runer.shell!.AddScript(target.Source);
-
-                runer.shell!.Invoke(null, runer.pwshOutput);
-
-                if (runer.shell!.HadErrors)
-                    return false;
-
-                else return true;
-            }
         }
     }
 }

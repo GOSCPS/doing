@@ -10,9 +10,13 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices.ComTypes;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using System.Xml.Linq;
+using static Doing.Engine.Target;
 
 namespace Doing.Engine
 {
@@ -85,7 +89,7 @@ namespace Doing.Engine
                             var fs = 
                                 PreProcess(Path.GetDirectoryName(fileName) + "/" + preCommand["Import".Length..].Trim());
 
-                            // 返回null则忽略
+                            // 添加到文件列表
                             if (fs != null)
                                 filesInfo.AddRange(fs);
                         }
@@ -93,6 +97,7 @@ namespace Doing.Engine
                         {
                             Tool.Printer.NoFormatErrLine($"File Not Include!\nAt File `{fileName}` Lines {lineNumber}");
                             Tool.Printer.NoFormatErrLine($"The miss file name is:`{f.FileName}`");
+                            throw;
                         }
                     }
 
@@ -122,155 +127,296 @@ namespace Doing.Engine
             return filesInfo.ToArray();
         }
 
+        // Target定义的正则表达式
+        private static readonly             
+            Regex targetRegex = new(@"^@Target\s+(?<Name>[a-zA-Z0-9-_\u4e00-\u9fa5]+)\s*$");
+        private static readonly 
+            Regex targetRegexWithDeps = new(@"^@Target\s+(?<Name>[a-zA-Z0-9-_\u4e00-\u9fa5]+)\s*:\s*(?<Deps>[^:]+)$");
+
+        /// <summary>
+        /// 尝试解析Target
+        /// </summary>
+        /// <param name="definedLine"></param>
+        /// <param name="info"></param>
+        /// <returns></returns>
+        private static bool TryParseTarget(
+            BuildLineInfo definedLine,out (string name, string[] deps) info)
+        {
+            // 匹配到Target
+            if (targetRegex.IsMatch(definedLine.Source))
+            {
+                Match match = targetRegex.Match(definedLine.Source);
+
+                // only one matches
+                string named = match.Groups["Name"].Value.Trim();
+
+                // 检查名称是否合法
+                if (!Utility.CheckName(named, out _))
+                    throw
+                        new DException.RuntimePositionException("The target name is unlawful!",
+                        definedLine);
+
+                //target = new(buildFile.AllLines[lineNumber])
+                //{
+                //Name = named,
+                //};
+                info = new(named, Array.Empty<string>());
+
+                // 错误❌
+                // regex有多个match
+                if (match.NextMatch().Success)
+                    throw
+                        new DException.RuntimePositionException("The regex match should only one!",
+                        definedLine);
+
+                return true;
+            }
+            else
+            {
+                info = new("", Array.Empty<string>());
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// 尝试解析带依赖的Target
+        /// </summary>
+        /// <param name="definedLine"></param>
+        /// <param name="info"></param>
+        /// <returns></returns>
+        private static bool TryParseTargetWithDeps(
+            BuildLineInfo definedLine, out (string name, string[] deps) info)
+        {
+            // 匹配到有依赖的Target
+            if (targetRegexWithDeps.IsMatch(definedLine.Source))
+            {
+                Match match = targetRegexWithDeps.Match(definedLine.Source);
+
+                // only one matches
+                string named = match.Groups["Name"].Value.Trim();
+
+                // 检查名称是否合法
+                if (!Utility.CheckName(named, out _))
+                    throw
+                        new DException.RuntimePositionException($"The target name `{named}` is unlawful!",
+                        definedLine);
+
+                // 获取依赖
+                string[] deps = Regex.Split(match.Groups["Deps"].Value, @"\s+")
+                    // 跳过空白
+                    .SkipWhile((str) =>
+                    {
+                        if (str.Trim().Length == 0) return true;
+                        else return false;
+                    }).ToArray();
+
+                // 检查依赖名称是否合法
+                foreach (var depend in deps)
+                {
+                    // 检查名称是否合法
+                    if (!Utility.CheckName(depend, out _))
+                        throw
+                            new DException.RuntimePositionException($"The target depend name `{depend}` is unlawful!",
+                            definedLine);
+                }
+
+                //target = new(buildFile.AllLines[lineNumber])
+                //{
+                //    Name = named,
+                //    Deps = deps
+                //};
+                info = new(named, deps);
+
+                // 错误❌
+                // regex有多个match
+                if (match.NextMatch().Success)
+                    throw
+                        new DException.RuntimePositionException("The regex match should only one!",
+                        definedLine);
+
+                return true;
+            }
+            else
+            {
+                info = new("", Array.Empty<string>());
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// 尝试解析Target定义
+        /// </summary>
+        /// <param name="defLine"></param>
+        /// <param name="output"></param>
+        /// <returns></returns>
+        private static bool TryParseTargetDefine(
+            BuildLineInfo defLine,out (string tNamed, string[] tDeps) output)
+        {
+            if(TryParseTarget(defLine,out output))
+            {
+                return true;
+            }
+            else if(TryParseTargetWithDeps(defLine,out output))
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// 函数定义的正则表达式
+        /// </summary>
+        private static readonly Regex functionRegex = new(@"@Function\s+(?<Name>[])\s+");
+
+        private static bool
+            TryParseFunctionDefine(BuildLineInfo defLine,out string? funcNamed)
+        {
+            funcNamed = default;
+            if (functionRegex.IsMatch(defLine.Source))
+            {
+                Match match = targetRegex.Match(defLine.Source);
+
+                // only one matches
+                string named = match.Groups["Name"].Value.Trim();
+
+                // 检查名称是否合法
+                if (!Utility.CheckName(named, out _))
+                    throw
+                        new DException.RuntimePositionException("The function name is unlawful!",
+                        defLine);
+                
+                // 赋值名称
+                funcNamed = named;
+
+                // 错误❌
+                // regex有多个match
+                if (match.NextMatch().Success)
+                    throw
+                        new DException.RuntimePositionException("The regex match should only one!",
+                        defLine);
+
+                else return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
         /// <summary>
         /// 处理
         /// 产生Target
         /// </summary>
         /// 
         /// <param name="buildFile">构建的文件</param>
-        public static Target[] Process(BuildFileInfo buildFile)
+        public static void Process(BuildFileInfo buildFile)
         {
-            // 正则表达式
-            Regex targetRegex = new(@"^@Target\s+(?<Name>[a-zA-Z0-9-_\u4e00-\u9fa5]+)\s*$");
-            Regex targetRegexWithDeps = new(@"^@Target\s+(?<Name>[a-zA-Z0-9-_\u4e00-\u9fa5]+)\s*:\s*(?<Deps>[^:]+)$");
-
-            // 查找到的Target
+            // 查找到的Target和Function
             Dictionary<string, Target> allTargets = new();
+            Dictionary<string, Function> allFunctions = new();
 
             // 遍历行
             for (int lineNumber = 0; lineNumber < buildFile.AllLines.Length; lineNumber++)
             {
-                // 构造target所需信息
-                string? tNamed = null;
-                string[]? tDeps = null;
-                BuildLineInfo? definedLines = null;
-
-                // 匹配到Target
-                if (targetRegex.IsMatch(buildFile.AllLines[lineNumber].Source))
-                {
-                    Match match = targetRegex.Match(buildFile.AllLines[lineNumber].Source);
-
-                    // only one matches
-                    string named = match.Groups["Name"].Value.Trim();
-
-                    // 检查名称是否合法
-                    if (!Utility.CheckName(named, out _))
-                        throw
-                            new DException.RuntimePositionException("The target name is unlawful!",
-                            buildFile.AllLines[lineNumber]);
-
-                    //target = new(buildFile.AllLines[lineNumber])
-                    //{
-                    //Name = named,
-                    //};
-                    tNamed = named;
-                    tDeps = Array.Empty<string>();
-                    definedLines = buildFile.AllLines[lineNumber];
-
-                    // 错误❌
-                    // regex有多个match
-                    if (match.NextMatch().Success)
-                        throw
-                            new DException.RuntimePositionException("The regex match should only one!",
-                            buildFile.AllLines[lineNumber]);
-                }
-                // 匹配到有依赖的Target
-                else if (targetRegexWithDeps.IsMatch(buildFile.AllLines[lineNumber].Source))
-                {
-                    Match match = targetRegexWithDeps.Match(buildFile.AllLines[lineNumber].Source);
-
-                    // only one matches
-                    string named = match.Groups["Name"].Value.Trim();
-
-                    // 检查名称是否合法
-                    if (!Utility.CheckName(named, out _))
-                        throw
-                            new DException.RuntimePositionException($"The target name `{named}` is unlawful!",
-                            buildFile.AllLines[lineNumber]);
-
-                    // 获取依赖
-                    string[] deps = Regex.Split(match.Groups["Deps"].Value, @"\s+")
-                        // 跳过空白
-                        .SkipWhile((str) =>
-                        {
-                            if (str.Trim().Length == 0) return true;
-                            else return false;
-                        }).ToArray();
-
-                    // 检查依赖名称是否合法
-                    foreach (var depend in deps)
-                    {
-                        // 检查名称是否合法
-                        if (!Utility.CheckName(depend, out _))
-                            throw
-                                new DException.RuntimePositionException($"The target depend name `{depend}` is unlawful!",
-                                buildFile.AllLines[lineNumber]);
-                    }
-
-                    //target = new(buildFile.AllLines[lineNumber])
-                    //{
-                    //    Name = named,
-                    //    Deps = deps
-                    //};
-                    tNamed = named;
-                    tDeps = deps;
-                    definedLines = buildFile.AllLines[lineNumber];
-
-                    // 错误❌
-                    // regex有多个match
-                    if (match.NextMatch().Success)
-                        throw
-                            new DException.RuntimePositionException("The regex match should only one!",
-                            buildFile.AllLines[lineNumber]);
-                }
                 // 跳过空行和注释
-                else if (buildFile.AllLines[lineNumber].Source.Trim().Length == 0)
+                if (buildFile.AllLines[lineNumber].Source.Trim().Length == 0)
                     continue;
                 else if (buildFile.AllLines[lineNumber].Source.Trim().StartsWith('#'))
                     continue;
+                // Target定义
+                else if(TryParseTargetDefine(buildFile.AllLines[lineNumber],out (string name, string[] deps) info))
+                {
+                    BuildLineInfo definedLine = buildFile.AllLines[lineNumber];
 
+                    // 收集target源代码
+                    lineNumber++;
+                    StringBuilder sourceCode = new();
+
+                    while (true)
+                    {
+                        // 意外的行尾
+                        if (lineNumber >= buildFile.AllLines.Length)
+                        {
+                            throw new DException.RuntimePositionException($"Miss keyword `@EndTarget`!",
+                                buildFile.AllLines[^1]);
+                        }
+                        // 结尾
+                        else if (buildFile.AllLines[lineNumber].Source.Trim() == "@EndTarget")
+                        {
+                            break;
+                        }
+                        // 代码
+                        else
+                        {
+                            sourceCode.Append(buildFile.AllLines[lineNumber].Source + '\n');
+                            lineNumber++;
+                        }
+                    }
+
+                    // 添加Target
+                    Target target = new(definedLine, sourceCode.ToString(), info.name, info.deps);
+
+                    if (allTargets.TryGetValue(target!.Name, out Target? def))
+                    {
+                        // 重定义!
+                        throw new DException.RuntimePositionException(
+                                $"The target is defined At {def.DefineLine.Position.SourceFile.FullName} Lines {def.DefineLine.LineNumber}!\n",
+                                target.DefineLine);
+                    }
+                    // 添加到列表
+                    else allTargets.Add(target!.Name, target);
+                }
+                // Function定义
+                else if(TryParseFunctionDefine(buildFile.AllLines[lineNumber], out string? funcName))
+                {
+                    BuildLineInfo definedLine = buildFile.AllLines[lineNumber];
+
+                    // 收集function源代码
+                    lineNumber++;
+                    StringBuilder sourceCode = new();
+
+                    while (true)
+                    {
+                        // 意外的行尾
+                        if (lineNumber >= buildFile.AllLines.Length)
+                        {
+                            throw new DException.RuntimePositionException($"Miss keyword `@EndTarget`!",
+                                buildFile.AllLines[^1]);
+                        }
+                        // 结尾
+                        else if (buildFile.AllLines[lineNumber].Source.Trim() == "@EndTarget")
+                        {
+                            break;
+                        }
+                        // 代码
+                        else
+                        {
+                            sourceCode.Append(buildFile.AllLines[lineNumber].Source + '\n');
+                            lineNumber++;
+                        }
+                    }
+
+                    // 添加Target
+                    Function function = new(definedLine, sourceCode.ToString(), funcName!);
+
+                    if (allFunctions.TryGetValue(function!.Name, out Function? def))
+                    {
+                        // 重定义!
+                        throw new DException.RuntimePositionException(
+                                $"The target is defined At {def.DefineLine.Position.SourceFile.FullName} Lines {def.DefineLine.LineNumber}!\n",
+                                function.DefineLine);
+                    }
+                    // 添加到列表
+                    else allFunctions.Add(function!.Name, function);
+                }
                 // 未知语句
-                else if(tNamed == null || definedLines == null || tDeps == null)
-                    throw new DException.RuntimePositionException($"Unknown statement!",
-                         buildFile.AllLines[lineNumber]);
-
-                // 收集target源代码
-                lineNumber++;
-                StringBuilder sourceCode = new();
-
-                while (true)
+                else
                 {
-                    // 意外的行尾
-                    if (lineNumber >= buildFile.AllLines.Length)
-                    {
-                        throw new DException.RuntimePositionException($"Miss keyword `@EndTarget`!",
-                            buildFile.AllLines[^1]);
-                    }
-                    // 结尾
-                    else if (buildFile.AllLines[lineNumber].Source.Trim() == "@EndTarget")
-                    {
-                        break;
-                    }
-                    // 代码
-                    else
-                    {
-                        sourceCode.Append(buildFile.AllLines[lineNumber].Source + '\n');
-                        lineNumber++;
-                    }
+                    throw new DException.RuntimePositionException("Unknown sentence!", buildFile.AllLines[lineNumber]);
                 }
-
-                // 添加Target
-                Target target = new(definedLines, sourceCode.ToString(), tNamed, tDeps);
-
-                if (allTargets.TryGetValue(target!.Name, out Target? def))
-                {
-                    // 重定义!
-                    throw new DException.RuntimePositionException(
-                            $"The target is defined At {def.DefineLine.Position.SourceFile.FullName} Lines {def.DefineLine.LineNumber}!\n",
-                            target.DefineLine);
-                }
-                // 添加到列表
-                else allTargets.Add(target!.Name, target);
             }
 
             // 移动Main
@@ -280,7 +426,7 @@ namespace Doing.Engine
 
                 // 禁止依赖
                 if (mainTarget.Deps.Length != 0)
-                    throw new DException.RuntimePositionException($"The target `Main` not able to have depends!",
+                    throw new DException.RuntimePositionException($"The target `Main` isn't able to have depends!",
                         mainTarget.DefineLine);
 
                 buildFile.MainTarget = mainTarget;
@@ -288,18 +434,39 @@ namespace Doing.Engine
 
             // 设置构建文件AllTarget
             buildFile.AllTargets = allTargets.Values.ToArray();
+            buildFile.AllFunction = allFunctions.Values.ToArray();
+        }
 
-            // 返回target列表
-            return allTargets.Values.ToArray();
+
+        public static void ParseMain()
+        {
+            var info = Parse(Program.BuildFile);
+
+            // 添加到Runspace
+            foreach (var file in info.Item1)
+            {
+                Runspace.SourceFile.TryAdd(file.SourceFile.FullName, file);
+            }
+            foreach (var target in info.Item2)
+            {
+                Runspace.AllTarget.TryAdd(target.Name, target);
+            }
+            foreach(var function in info.Item3)
+            {
+                Runspace.AllFunction.TryAdd(function.Name, function);
+            }
+
+            // 处理依赖
+            MakeRunspaceDeps();
         }
 
         /// <summary>
         /// 解析
         /// </summary>
-        public static void Parse()
+        public static (BuildFileInfo[],Target[],Function[]) Parse(string fileName)
         {
             // 获取文件列表
-            BuildFileInfo[] fileInfo = PreProcess(Program.BuildFile)!;
+            BuildFileInfo[] fileInfo = PreProcess(fileName)!;
 
             // 导出Target
             Dictionary<string, Target> targetTable = new();
@@ -307,7 +474,8 @@ namespace Doing.Engine
             // 负责检查重名Target
             foreach (var f in fileInfo)
             {
-                var targets = Process(f);
+                Process(f);
+                var targets = f.AllTargets;
 
                 // 检查重名Target
                 foreach (var t in targets)
@@ -323,24 +491,36 @@ namespace Doing.Engine
                 }
             }
 
-            // 添加到Runspace
-            foreach(var file in fileInfo)
+            // 导出Function
+            Dictionary<string, Function> functionTable = new();
+
+            // 负责检查重名Function
+            foreach (var f in fileInfo)
             {
-                Runspace.SourceFile.TryAdd(file.SourceFile.FullName, file);
-            }
-            foreach (var target in targetTable)
-            {
-                Runspace.AllTargets.TryAdd(target.Key, target.Value);
+                Process(f);
+                var functions = f.AllFunction;
+
+                // 检查重名Function
+                foreach (var func in functions)
+                {
+                    if (functionTable.TryGetValue(func.Name, out Function? def))
+                    {
+                        // 重定义!
+                        throw new DException.RuntimePositionException(
+                            $"The target is defined At {def.DefineLine.Position.SourceFile.FullName} Lines {def.DefineLine.LineNumber}!\n",
+                            func.DefineLine);
+                    }
+                    else functionTable.Add(func.Name, func);
+                }
             }
 
-            // 处理依赖
-            MakeDeps();
+            return (fileInfo, targetTable.Values.ToArray(),functionTable.Values.ToArray());
         }
 
         /// <summary>
         /// 处理依赖
         /// </summary>
-        private static void MakeDeps()
+        public static void MakeRunspaceDeps()
         {
             // 用户未指定
             // 添加Default Target
@@ -354,7 +534,7 @@ namespace Doing.Engine
             List<Target> aims = new();
             foreach(var t in Program.AimTargets)
             {
-                if (Runspace.AllTargets.TryGetValue(t, out Target? value))
+                if (Runspace.AllTarget.TryGetValue(t, out Target? value))
                 {
                     aims.Add(value);
                 }
@@ -362,16 +542,16 @@ namespace Doing.Engine
             }
 
             // 添加依赖
-            foreach(var t in Algorithm.Topological.Sort(aims.ToArray(), Runspace.AllTargets.Values.ToArray()))
+            foreach(var t in Algorithm.Topological.Sort(aims.ToArray(), Runspace.AllTarget.Values.ToArray()))
             {
-                if (!Runspace.AimTargets.TryAdd(t.Name, t))
+                if (!Runspace.AimTarget.TryAdd(t.Name, t))
                 {
                     throw new DException.RuntimeException($"Add aim target `{t.Name}` error!");
                 }
             }
 
             // 查找Main
-            foreach(var target in Runspace.AimTargets.Values)
+            foreach(var target in Runspace.AimTarget.Values)
             {
                 if(target.DefineLine.Position.MainTarget != null
                     && target.DefineLine.Position.IsMainBuilt == false)
@@ -382,7 +562,7 @@ namespace Doing.Engine
             }
 
             // 添加到Worker
-            foreach(var target in Runspace.AimTargets)
+            foreach(var target in Runspace.AimTarget)
             {
                 Worker.AddTarget(target.Value);
             }
