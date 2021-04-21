@@ -6,12 +6,8 @@
 // Copyright (c) 2020-2021 GOSCPS 保留所有权利.
 //===========================================================
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
+using System.Management.Automation;
 using System.Management.Automation.Runspaces;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Doing.Cmdlet
 {
@@ -35,6 +31,36 @@ namespace Doing.Cmdlet
                 new SessionStateCmdletEntry(
                     GetVersion.CallName,
                     typeof(GetVersion),
+                    null));
+
+            state.Commands.Add(
+                new SessionStateCmdletEntry(
+                    SetDVariable.CallName,
+                    typeof(SetDVariable),
+                    null));
+
+            state.Commands.Add(
+                new SessionStateCmdletEntry(
+                    GetDVariable.CallName,
+                    typeof(GetDVariable),
+                    null));
+
+            state.Commands.Add(
+                new SessionStateCmdletEntry(
+                    AddOutput.CallName,
+                    typeof(AddOutput),
+                    null));
+
+            state.Commands.Add(
+                new SessionStateCmdletEntry(
+                    AddSource.CallName,
+                    typeof(AddSource),
+                    null));
+
+            state.Commands.Add(
+                new SessionStateCmdletEntry(
+                    CheckCompile.CallName,
+                    typeof(CheckCompile),
                     null));
         }
 

@@ -7,12 +7,8 @@
 //===========================================================
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Management.Automation;
 using System.Collections.Concurrent;
+using System.Management.Automation;
 using System.Management.Automation.Runspaces;
 using static Doing.Engine.Target;
 
@@ -39,7 +35,7 @@ namespace Doing.Engine
     }
 
     /// <summary>
-    /// 运行空间
+    /// Target运行空间
     /// </summary>
     public class Runspace
     {
@@ -76,12 +72,61 @@ namespace Doing.Engine
         { get; } = new();
 
         /// <summary>
+        /// 变量表
+        /// </summary>
+        public ConcurrentDictionary<string, object> GlobalVariableTable
+        { get; } = new();
+
+        /// <summary>
+        /// 运行空间列表
+        /// </summary>
+        private static readonly ConcurrentDictionary<Guid, Runspace>
+            RunspaceList = new();
+
+        /// <summary>
+        /// 尝试获取运行空间
+        /// </summary>
+        /// 
+        /// <param name="hostGuid">hostGuid</param>
+        /// <param name="doingRunspace">doing的运行空间</param>
+        /// 
+        /// <returns>获取成功返回true，否则false</returns>
+        public static bool TryGetRunspace(Guid hostGuid,out Runspace? doingRunspace)
+        {
+            if (RunspaceList.TryGetValue(hostGuid, out doingRunspace))
+                return true;
+            else return false;
+        }
+
+        /// <summary>
+        /// 注册运行空间
+        /// </summary>
+        /// 
+        /// <param name="hostGuid">hostGuid</param>
+        /// 
+        /// <returns>注册成功返回true，否则false</returns>
+        public bool RegisteredRunspace(Guid hostGuid)
+        {
+            return RunspaceList.TryAdd(hostGuid, this);
+        }
+
+        /// <summary>
+        /// 注销运行空间
+        /// </summary>
+        /// 
+        /// <param name="hostGuid">hostGuid</param>
+        public static void LayoutRunspace(Guid hostGuid)
+        {
+            RunspaceList.TryRemove(hostGuid, out _);
+        }
+
+        /// <summary>
         /// 注册函数
         /// </summary>
         /// <param name="state"></param>
         public void AddFunctions(InitialSessionState state)
         {
-            foreach(var func in AllFunction)
+            foreach (var func in AllFunction)
             {
                 state.Commands.Add(new SessionStateFunctionEntry(func.Key, func.Value.Source));
             }
@@ -91,10 +136,14 @@ namespace Doing.Engine
         /// 初始化Pwsh运行空间
         /// </summary>
         public static System.Management.Automation.Runspaces.Runspace CreateRunspace(
-            InitialSessionState sessionState)
+            InitialSessionState sessionState,
+            DHost host,
+            string named = "DefaultRunspace")
         {
-            var spc = RunspaceFactory.CreateRunspace(sessionState);
+            var spc = RunspaceFactory.CreateRunspace(host, sessionState);
             spc.Open();
+            spc.Name = named;
+
             return spc;
         }
     }

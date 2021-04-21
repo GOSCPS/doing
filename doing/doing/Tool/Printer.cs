@@ -222,7 +222,9 @@ namespace Doing.Tool
         /// <param name="str"></param>
         public static void NoFormatDebugLine(string str)
         {
-            DebugLine(str.Replace("{", "{{").Replace("}", "}}"));
+            DebugLine("{0}", str);
         }
+
+
     }
 }

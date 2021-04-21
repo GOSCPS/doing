@@ -24,7 +24,7 @@ namespace Doing.Algorithm
             Engine.Target[] total)
         {
             Dictionary<Engine.Target, bool> buf =
-                new ();
+                new();
 
             Queue<Engine.Target> output = new();
 

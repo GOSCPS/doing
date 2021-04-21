@@ -10,13 +10,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Management.Automation.Runspaces;
-using System.Runtime.InteropServices.ComTypes;
-using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
-using System.Xml.Linq;
 using static Doing.Engine.Target;
 
 namespace Doing.Engine
@@ -27,6 +22,11 @@ namespace Doing.Engine
     static class Parsing
     {
         /// <summary>
+        /// Main特殊Target的名称
+        /// </summary>
+        public const string MainTargetName = "Main";
+
+        /// <summary>
         /// 用于记录Import过的文件
         /// </summary>
         private static readonly List<string> AccessedFile = new();
@@ -36,7 +36,7 @@ namespace Doing.Engine
         /// </summary>
         /// <returns></returns>
         private static BuildFileInfo[]? PreProcess(
-            string fileName,Runspace runspace)
+            string fileName, Runspace runspace)
         {
             // 取绝对路径
             fileName = Path.GetFullPath(fileName.Trim());
@@ -64,7 +64,7 @@ namespace Doing.Engine
             List<BuildFileInfo> filesInfo = new();
 
             // 当前处理的文件
-            BuildFileInfo currentFile = new(new FileInfo(fileName),runspace);
+            BuildFileInfo currentFile = new(new FileInfo(fileName), runspace);
 
             // 总行
             string[] lines = File.ReadAllLines(fileName);
@@ -88,7 +88,7 @@ namespace Doing.Engine
                         try
                         {
                             // 当前(参数)文件所在目录/Import文件路径 
-                            var fs = 
+                            var fs =
                                 PreProcess(Path.GetDirectoryName(fileName) + "/" + preCommand["Import".Length..].Trim(), runspace);
 
                             // 添加到文件列表
@@ -130,9 +130,9 @@ namespace Doing.Engine
         }
 
         // Target定义的正则表达式
-        private static readonly             
+        private static readonly
             Regex targetRegex = new(@"^@Target\s+(?<Name>[a-zA-Z0-9-_\u4e00-\u9fa5]+)\s*$");
-        private static readonly 
+        private static readonly
             Regex targetRegexWithDeps = new(@"^@Target\s+(?<Name>[a-zA-Z0-9-_\u4e00-\u9fa5]+)\s*:\s*(?<Deps>[^:]+)$");
 
         /// <summary>
@@ -142,7 +142,7 @@ namespace Doing.Engine
         /// <param name="info"></param>
         /// <returns></returns>
         private static bool TryParseTarget(
-            BuildLineInfo definedLine,out (string name, string[] deps) info)
+            BuildLineInfo definedLine, out (string name, string[] deps) info)
         {
             // 匹配到Target
             if (targetRegex.IsMatch(definedLine.Source))
@@ -243,13 +243,13 @@ namespace Doing.Engine
         /// <param name="output"></param>
         /// <returns></returns>
         private static bool TryParseTargetDefine(
-            BuildLineInfo defLine,out (string tNamed, string[] tDeps) output)
+            BuildLineInfo defLine, out (string tNamed, string[] tDeps) output)
         {
-            if(TryParseTarget(defLine,out output))
+            if (TryParseTarget(defLine, out output))
             {
                 return true;
             }
-            else if(TryParseTargetWithDeps(defLine,out output))
+            else if (TryParseTargetWithDeps(defLine, out output))
             {
                 return true;
             }
@@ -265,7 +265,7 @@ namespace Doing.Engine
         private static readonly Regex functionRegex = new(@"^@Function\s+(?<Name>[a-zA-Z0-9-_]+)\s*$");
 
         private static bool
-            TryParseFunctionDefine(BuildLineInfo defLine,out string? funcNamed)
+            TryParseFunctionDefine(BuildLineInfo defLine, out string? funcNamed)
         {
             funcNamed = default;
             if (functionRegex.IsMatch(defLine.Source))
@@ -280,7 +280,7 @@ namespace Doing.Engine
                     throw
                         new DException.RuntimePositionException("The function name is unlawful!",
                         defLine);
-                
+
                 // 赋值名称
                 funcNamed = named;
 
@@ -306,7 +306,7 @@ namespace Doing.Engine
         /// 
         /// <param name="buildFile">构建的文件</param>
         public static void Process(
-            BuildFileInfo buildFile,Runspace runspace)
+            BuildFileInfo buildFile, Runspace runspace)
         {
             // 查找到的Target和Function
             Dictionary<string, Target> allTargets = new();
@@ -321,7 +321,7 @@ namespace Doing.Engine
                 else if (buildFile.AllLines[lineNumber].Source.Trim().StartsWith('#'))
                     continue;
                 // Target定义
-                else if(TryParseTargetDefine(buildFile.AllLines[lineNumber],out (string name, string[] deps) info))
+                else if (TryParseTargetDefine(buildFile.AllLines[lineNumber], out (string name, string[] deps) info))
                 {
                     BuildLineInfo definedLine = buildFile.AllLines[lineNumber];
 
@@ -364,7 +364,7 @@ namespace Doing.Engine
                     else allTargets.Add(target!.Name, target);
                 }
                 // Function定义
-                else if(TryParseFunctionDefine(buildFile.AllLines[lineNumber], out string? funcName))
+                else if (TryParseFunctionDefine(buildFile.AllLines[lineNumber], out string? funcName))
                 {
                     BuildLineInfo definedLine = buildFile.AllLines[lineNumber];
 
@@ -414,14 +414,9 @@ namespace Doing.Engine
             }
 
             // 移动Main
-            if(allTargets.TryGetValue("Main",out Target? mainTarget))
+            if (allTargets.TryGetValue("Main", out Target? mainTarget))
             {
                 allTargets.Remove("Main");
-
-                // 禁止依赖
-                if (mainTarget.Deps.Length != 0)
-                    throw new DException.RuntimePositionException($"The target `Main` isn't able to have depends!",
-                        mainTarget.DefineLine);
 
                 buildFile.MainTarget = mainTarget;
             }
@@ -429,6 +424,39 @@ namespace Doing.Engine
             // 设置构建文件AllTarget
             buildFile.AllTargets = allTargets.Values.ToArray();
             buildFile.AllFunction = allFunctions.Values.ToArray();
+
+            // 检查依赖
+            CheckDepends(buildFile);
+        }
+
+        /// <summary>
+        /// 检查依赖
+        /// </summary>
+        /// <param name="buildFile"></param>
+        private static void CheckDepends(BuildFileInfo buildFile)
+        {
+            // Main禁止依赖
+            if (buildFile.MainTarget != null)
+            {
+                if (buildFile.MainTarget.Deps.Length != 0)
+                {
+                    throw new DException.RuntimePositionException($"The target `Main` isn't able to have depends!",
+                        buildFile.MainTarget.DefineLine);
+                }
+            }
+
+            // Target禁止依赖Main
+            foreach (var target in buildFile.AllTargets)
+            {
+                foreach (var deps in target.Deps)
+                {
+                    if (deps == MainTargetName)
+                    {
+                        throw new DException.RuntimePositionException($"The target `{target.Name}` isn't able to depend for `Main`!",
+                        target.DefineLine);
+                    }
+                }
+            }
         }
 
         /// <summary>
@@ -452,10 +480,10 @@ namespace Doing.Engine
             {
                 runspace.AllTarget.TryAdd(target.Name, target);
             }
-            foreach(var function in info.Item3)
+            foreach (var function in info.Item3)
             {
                 runspace.AllFunction.TryAdd(function.Name, function);
-}
+            }
 
             // 处理依赖
             MakeRunspaceDeps(runspace);
@@ -468,8 +496,8 @@ namespace Doing.Engine
         /// </summary>
         /// <param name="runspace">命名空间，将会绑定</param>
         /// <param name="fileName">要处理的文件名称</param>
-        public static (BuildFileInfo[],Target[],Function[]) ParseFile(
-            string fileName,Runspace runspace)
+        public static (BuildFileInfo[], Target[], Function[]) ParseFile(
+            string fileName, Runspace runspace)
         {
             // 获取文件列表
             BuildFileInfo[] fileInfo = PreProcess(fileName, runspace)!;
@@ -519,7 +547,7 @@ namespace Doing.Engine
                 }
             }
 
-            return (fileInfo, targetTable.Values.ToArray(),functionTable.Values.ToArray());
+            return (fileInfo, targetTable.Values.ToArray(), functionTable.Values.ToArray());
         }
 
         /// <summary>
@@ -529,7 +557,7 @@ namespace Doing.Engine
         {
             // 用户未指定
             // 添加Default Target
-            if(Program.AimTargets.Count == 0)
+            if (Program.AimTargets.Count == 0)
             {
                 Tool.Printer.WarnLine("Not specified target.build `Default`.");
                 Program.AimTargets.Add("Default");
@@ -537,7 +565,7 @@ namespace Doing.Engine
 
             // 查找依赖
             List<Target> aims = new();
-            foreach(var t in Program.AimTargets)
+            foreach (var t in Program.AimTargets)
             {
                 if (runspace.AllTarget.TryGetValue(t, out Target? value))
                 {
@@ -557,20 +585,20 @@ namespace Doing.Engine
             }
 
             // 查找&添加Main
-            foreach(var target in runspace.AimTarget.Values)
+            foreach (var target in runspace.AimTarget.Values)
             {
-                if(target.DefineLine.Position.MainTarget != null
+                if (target.DefineLine.Position.MainTarget != null
                     && target.DefineLine.Position.IsMainBuilt == false)
                 {
                     target.DefineLine.Position.IsMainBuilt = true;
-                    Worker.AddTarget(target.DefineLine.Position.MainTarget);
+                    Worker.AddTask(target.DefineLine.Position.MainTarget);
                 }
             }
 
             // 添加到Worker
-            foreach(var target in runspace.AimTarget)
+            foreach (var target in runspace.AimTarget)
             {
-                Worker.AddTarget(target.Value);
+                Worker.AddTask(target.Value);
             }
 
             return;

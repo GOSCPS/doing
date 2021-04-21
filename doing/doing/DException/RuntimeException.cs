@@ -7,10 +7,6 @@
 //===========================================================
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Doing.Engine;
 
 namespace Doing.DException
@@ -27,7 +23,7 @@ namespace Doing.DException
         {
             Msg = msg;
         }
-        public RuntimeException(string msg, Exception inner) : base(msg,inner)
+        public RuntimeException(string msg, Exception inner) : base(msg, inner)
         {
             Msg = msg;
             InnerException = inner;
@@ -36,17 +32,17 @@ namespace Doing.DException
         public override string ToString()
         {
             if (InnerException == null)
-                
+
                 if (Program.IsDebug)
                     return base.ToString();
-                else 
+                else
                     return "*** " + Msg;
 
             else
                 if (Program.IsDebug)
-                    return base.ToString();
-                else 
-                    return "*** " + Msg + "\n" + InnerException.ToString();
+                return base.ToString();
+            else
+                return "*** " + Msg + "\n" + InnerException.ToString();
         }
 
     }
@@ -68,7 +64,7 @@ namespace Doing.DException
 
         public override string ToString()
         {
-            if(Program.IsDebug)
+            if (Program.IsDebug)
                 return $"*** At {Position.Position.SourceFile.FullName} Lines {Position.LineNumber}\n" + base.ToString();
             else
                 return $"*** At {Position.Position.SourceFile.FullName} Lines {Position.LineNumber}\n" + Msg;

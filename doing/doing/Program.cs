@@ -18,7 +18,8 @@ namespace Doing
         /// <summary>
         /// 是否处于Debug模式
         /// </summary>
-        public static bool IsDebug {
+        public static bool IsDebug
+        {
             get
             {
                 return IsDebug_;
@@ -233,7 +234,7 @@ namespace Doing
                             AimTargets.Add(arg);
 
                         // Target已定义
-                        else Tool.Printer.WarnLine("The target is defined:{0}",arg);
+                        else Tool.Printer.WarnLine("The target is defined:{0}", arg);
                     }
                     // 位置指令
                     else
@@ -258,9 +259,12 @@ namespace Doing
             try
             {
                 Engine.Parsing.LoadFileToRunspace(
-                    Engine.MainRunspace.Get(),BuildFile);
-                
-                Engine.Worker.Run();
+                    Engine.MainRunspace.Get(), BuildFile);
+
+                if (!Engine.Worker.Run())
+                {
+                    throw new DException.RuntimeException("The worker return error!");
+                }
             }
             catch (Exception err)
             {

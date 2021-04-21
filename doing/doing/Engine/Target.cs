@@ -7,12 +7,11 @@
 //===========================================================
 
 using System;
-using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Management.Automation;
 using System.Management.Automation.Runspaces;
-using System.Text;
-using System.Threading.Tasks;
 using static Doing.Engine.Target;
 
 namespace Doing.Engine
@@ -103,11 +102,33 @@ namespace Doing.Engine
 
     }
 
+    /// <summary>
+    /// 包含依赖的可执行接口
+    /// </summary>
+    public interface IExecutable
+    {
+        /// <summary>
+        /// 执行名称
+        /// </summary>
+        public string Name { get; }
+
+        /// <summary>
+        /// 执行依赖
+        /// </summary>
+        public string[] Deps { get; }
+
+        /// <summary>
+        /// 执行
+        /// </summary>
+        /// 
+        /// <returns>执行成功返回true，否则false</returns>
+        public bool Execute();
+    }
 
     /// <summary>
     /// 目标
     /// </summary>
-    public class Target
+    public class Target : IExecutable
     {
         /// <summary>
         /// 访问锁
@@ -140,7 +161,7 @@ namespace Doing.Engine
         public Runspace TargetRunspace { get; init; }
 
         public Target(
-            BuildLineInfo defined,Runspace runspace,string source,string name,string[] deps)
+            BuildLineInfo defined, Runspace runspace, string source, string name, string[] deps)
         {
             DefineLine = defined;
             Source = source;
@@ -152,18 +173,27 @@ namespace Doing.Engine
         /// <summary>
         /// 执行
         /// </summary>
-        public virtual void Execute() {
+        public bool Execute()
+        {
             lock (RunLocker)
             {
-                // 创建运行空间
+                // 初始化
                 TargetExecuter runer = new(this);
                 InitialSessionState iss = InitialSessionState.CreateDefault();
+                DHost host = new(TargetRunspace);
 
                 // 添加Cmdlet和Function
                 Cmdlet.StandardCmdlet.AddStandardCmdlet(iss);
                 TargetRunspace.AddFunctions(iss);
 
-                TargetExecuter.CreatePwsh(Runspace.CreateRunspace(iss), runer);
+                // 创建运行空间
+                var runsce = Runspace.CreateRunspace(iss, host, $"TargetRunspace-{Name}");
+
+                // 创建pwsh
+                TargetExecuter.CreatePwsh(runsce, runer);
+
+                // 注册host
+                TargetRunspace.RegisteredRunspace(host.InstanceId);
 
                 // 清除之前的输出和命令
                 runer.shell!.Commands.Clear();
@@ -175,10 +205,29 @@ namespace Doing.Engine
 
                 runer.shell!.Invoke(null, runer.pwshOutput);
 
+                // 关闭运行空间
+                runer.shell.Runspace.Close();
+
+                // 注销host
+                Runspace.LayoutRunspace(host.InstanceId);
+
                 // 调用错误
                 if (runer.shell!.HadErrors)
-                    throw new DException.RuntimePositionException(
-                        "The PowerShell return error!",DefineLine);
+                {
+                    // 输出最后一个错误的详细信息 
+                    ErrorRecord record = runer.shell.Streams.Error.Last();
+
+                    // 包含位置信息
+                    if (record.InvocationInfo.PositionMessage.Trim().Length != 0)
+                    {
+                        Tool.Printer.ErrLine("The last error line at {0} Lines {1}!",
+                            DefineLine.Position.SourceFile.FullName,
+                            record.InvocationInfo.ScriptLineNumber + DefineLine.LineNumber);
+                    }
+
+                    return false;
+                }
+                else return true;
             }
         }
 
@@ -208,7 +257,7 @@ namespace Doing.Engine
             public Runspace FunctionRunspace { get; init; }
 
             public Function(
-                BuildLineInfo defLine,Runspace runspace,string name,string body)
+                BuildLineInfo defLine, Runspace runspace, string name, string body)
             {
                 DefineLine = defLine;
                 Name = name;

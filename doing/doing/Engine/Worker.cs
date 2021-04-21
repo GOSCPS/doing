@@ -7,11 +7,7 @@
 //===========================================================
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace Doing.Engine
 {
@@ -24,7 +20,7 @@ namespace Doing.Engine
         /// 任务队列
         /// </summary>
         private static readonly System.Collections.Concurrent.ConcurrentQueue
-            <Target> taskList = new();
+            <IExecutable> taskList = new();
 
         /// <summary>
         /// 完成列表
@@ -52,7 +48,7 @@ namespace Doing.Engine
         /// 添加目标
         /// </summary>
         /// <param name="target"></param>
-        public static void AddTarget(Target target)
+        public static void AddTask(IExecutable target)
         {
             taskList.Enqueue(target);
         }
@@ -64,7 +60,7 @@ namespace Doing.Engine
         /// <returns></returns>
         public static bool IsFinish(string targetName)
         {
-            foreach(var finished in finishList)
+            foreach (var finished in finishList)
             {
                 if (targetName == finished)
                     return true;
@@ -89,15 +85,17 @@ namespace Doing.Engine
         {
             lock (locker)
             {
-                for(int ptr=0;ptr != threadList.Length; ptr++)
+                for (int ptr = 0; ptr != threadList.Length; ptr++)
                 {
                     // 线程未null或者已死亡
                     // 重新启动
-                    if(!((threadList[ptr] != null) && threadList[ptr].IsAlive))
+                    if (!((threadList[ptr] != null) && threadList[ptr].IsAlive))
                     {
                         threadList[ptr] = new Thread(WorkThreadMethod)
                         {
                             Name = "Worker Thread-" + ptr.ToString(),
+                            CurrentCulture = Thread.CurrentThread.CurrentCulture,
+                            CurrentUICulture = Thread.CurrentThread.CurrentUICulture
                         };
                         threadList[ptr].Start();
                     }
@@ -111,13 +109,13 @@ namespace Doing.Engine
         /// </summary>
         /// 
         /// <returns>如果返回null，则不能获取任务</returns>
-        private static Target? GetTask()
+        private static IExecutable? GetTask()
         {
             // 错误则不再继续构建
             if (!errList.IsEmpty)
                 return null;
 
-            if (taskList.TryDequeue(out Target? result))
+            if (taskList.TryDequeue(out IExecutable? result))
             {
 
                 while (true)
@@ -152,7 +150,7 @@ namespace Doing.Engine
         /// </summary>
         private static void WorkThreadMethod()
         {
-            Target? target = null;
+            IExecutable? target = null;
 
             try
             {
@@ -169,7 +167,10 @@ namespace Doing.Engine
                     if (target == null)
                         return;
 
-                    target.Execute();
+                    if (!target.Execute())
+                    {
+                        throw new DException.RuntimeException("The executable execute fail down!");
+                    }
 
                     // 添加到完成列表
                     finishList.Add(target.Name);
@@ -181,8 +182,7 @@ namespace Doing.Engine
                 Tool.Printer.NoFormatErrLine($"*** {Thread.CurrentThread.Name} Error!");
 
                 if (target != null)
-                    Tool.Printer.NoFormatErrLine($"*** In target `{target.Name}` At {target.DefineLine.Position.SourceFile.FullName} " +
-                        $"StartLines {target.DefineLine.LineNumber}");
+                    Tool.Printer.ErrLine("*** Err at task `{0}` ", target.Name);
 
                 Tool.Printer.NoFormatErrLine(err.ToString());
             }
@@ -209,9 +209,9 @@ namespace Doing.Engine
                 {
                     bool allDeath = true;
 
-                    for(int ptr=0;ptr < threadList.Length; ptr++)
+                    for (int ptr = 0; ptr < threadList.Length; ptr++)
                     {
-                        if(threadList[ptr].IsAlive)
+                        if (threadList[ptr].IsAlive)
                         {
                             allDeath = false;
                             break;
@@ -221,7 +221,7 @@ namespace Doing.Engine
                     if (allDeath)
                         break;
                 }
-                
+
                 // 降低资源占用
                 Thread.Sleep(100);
             }
