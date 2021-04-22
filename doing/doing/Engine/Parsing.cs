@@ -421,6 +421,14 @@ namespace Doing.Engine
                 buildFile.MainTarget = mainTarget;
             }
 
+            // 移动Init
+            if(allTargets.TryGetValue("Init",out Target? initTarget))
+            {
+                allTargets.Remove("Init");
+
+                buildFile.InitTarget = initTarget;
+            }
+
             // 设置构建文件AllTarget
             buildFile.AllTargets = allTargets.Values.ToArray();
             buildFile.AllFunction = allFunctions.Values.ToArray();
@@ -445,14 +453,24 @@ namespace Doing.Engine
                 }
             }
 
-            // Target禁止依赖Main
+            // Init禁止依赖
+            if (buildFile.InitTarget != null)
+            {
+                if (buildFile.InitTarget.Deps.Length != 0)
+                {
+                    throw new DException.RuntimePositionException($"The target `Init` isn't able to have depends!",
+                        buildFile.InitTarget.DefineLine);
+                }
+            }
+
+            // Target禁止依赖Main和Init
             foreach (var target in buildFile.AllTargets)
             {
                 foreach (var deps in target.Deps)
                 {
-                    if (deps == MainTargetName)
+                    if (deps == MainTargetName || deps == "Init")
                     {
-                        throw new DException.RuntimePositionException($"The target `{target.Name}` isn't able to depend for `Main`!",
+                        throw new DException.RuntimePositionException($"The target `{target.Name}` isn't able to depend for `Main` or `Init`!",
                         target.DefineLine);
                     }
                 }
@@ -484,9 +502,6 @@ namespace Doing.Engine
             {
                 runspace.AllFunction.TryAdd(function.Name, function);
             }
-
-            // 处理依赖
-            MakeRunspaceDeps(runspace);
 
             return;
         }
@@ -553,55 +568,64 @@ namespace Doing.Engine
         /// <summary>
         /// 处理依赖
         /// </summary>
-        public static void MakeRunspaceDeps(Runspace runspace)
+        public static (Queue<Target> first,Queue<Target> last) MakeRunspaceDeps(
+            Runspace runspace,
+            List<string> aimTargets)
         {
             // 用户未指定
             // 添加Default Target
-            if (Program.AimTargets.Count == 0)
+            if (aimTargets.Count == 0)
             {
-                Tool.Printer.WarnLine("Not specified target.build `Default`.");
-                Program.AimTargets.Add("Default");
+                throw new ArgumentException("The aim target count is zero!",nameof(aimTargets));
             }
 
             // 查找依赖
             List<Target> aims = new();
-            foreach (var t in Program.AimTargets)
+            foreach (var t in aimTargets)
             {
                 if (runspace.AllTarget.TryGetValue(t, out Target? value))
                 {
                     aims.Add(value);
                 }
-                else throw new DException.RuntimeException($"The aim target `{t}` not found!");
+                else throw new ArgumentException($"The aim target `{t}` not found!",nameof(aimTargets));
             }
 
+            // Init和Main优先构建
+            Queue<Target> first = new();
 
-            // 添加依赖
-            foreach (var t in Algorithm.Topological.Sort(aims.ToArray(), runspace.AllTarget.Values.ToArray()))
+            // 检查依赖
+            var depends = Algorithm.Topological.Sort(aims.ToArray(), runspace.AllTarget.Values.ToArray());
+
+            // 添加Init
+            foreach(var file in runspace.SourceFile)
             {
-                if (!runspace.AimTarget.TryAdd(t.Name, t))
+                if(file.Value.InitTarget != null)
                 {
-                    throw new DException.RuntimeException($"Add aim target `{t.Name}` error!");
+                    first.Enqueue(file.Value.InitTarget);
                 }
             }
 
             // 查找&添加Main
-            foreach (var target in runspace.AimTarget.Values)
+            foreach (var target in first)
             {
                 if (target.DefineLine.Position.MainTarget != null
                     && target.DefineLine.Position.IsMainBuilt == false)
                 {
                     target.DefineLine.Position.IsMainBuilt = true;
-                    Worker.AddTask(target.DefineLine.Position.MainTarget);
                 }
             }
 
+            // 其他Target后执行
+            Queue<Target> last = new();
             // 添加到Worker
-            foreach (var target in runspace.AimTarget)
+            foreach (var target in depends)
             {
-                Worker.AddTask(target.Value);
+                last.Enqueue(target);
             }
 
-            return;
+            // first先执行
+            // last其次
+            return (first,last);
         }
     }
 }

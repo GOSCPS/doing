@@ -64,6 +64,21 @@ namespace Doing
             }
         }
 
+        private static bool KeepGoOn_ = false;
+        /// <summary>
+        /// 忽略错误
+        /// </summary>
+        public static bool KeepGoOn
+        {
+            get
+            {
+                return KeepGoOn_;
+            }
+            private set
+            {
+                KeepGoOn_ = value;
+            }
+        }
 
         /// <summary>
         /// 变量表
@@ -119,6 +134,7 @@ namespace Doing
             Tool.Printer.PutLine("\t--version\t\tPrint the doing version.");
             Tool.Printer.PutLine("\t--info\t\t\tPrint more info about doing.");
             Tool.Printer.PutLine("\t--nologo\t\tNot output the logo.");
+            Tool.Printer.PutLine("\t--goon\t\tContinue when error.");
         }
 
 
@@ -132,138 +148,178 @@ namespace Doing
         }
 
 
+        static void ProcessArgs(string[] args)
+        {
+
+            // 默认打印logo
+            bool isPrintLogo = true;
+
+            foreach (var arg in args)
+            {
+                // 一些小杂碎的事情
+                if (arg == "--help" || arg == "-h")
+                {
+                    PrintHelp();
+                    Environment.Exit(0);
+                }
+                else if (arg == "--version")
+                {
+                    Tool.Printer.PutLine(DoingVersion.ToString());
+                    Environment.Exit(0);
+                }
+                else if (arg == "--info")
+                {
+                    PrintInfo();
+                    Environment.Exit(0);
+                }
+                else if (arg == "--nologo")
+                {
+                    isPrintLogo = false;
+                }
+                else if (arg == "--debug")
+                {
+                    IsDebug = true;
+                }
+                else if (arg == "--goon")
+                {
+                    KeepGoOn_ = true;
+                }
+                // 指定线程数量
+                else if (arg.StartsWith("-t"))
+                {
+                    string num = arg[2..];
+
+                    if (int.TryParse(num, out int count))
+                    {
+                        // 确保线程数量不小于等于0
+                        if (count <= 0)
+                        {
+                            Tool.Printer.ErrLine("The thread count isn't more then one!");
+                            Environment.Exit(-1);
+                        }
+                        else ThreadCount = count;
+                    }
+                    // 错误的格式
+                    else
+                    {
+                        Tool.Printer.ErrLine("The thread count isn't a right format!");
+                        Environment.Exit(-1);
+                    }
+                }
+                // 指定构建文件
+                else if (arg.StartsWith("-f"))
+                {
+                    BuildFile = arg[2..];
+
+                    // 不接受空文件名称
+                    if (string.IsNullOrEmpty(BuildFile_))
+                    {
+                        Tool.Printer.ErrLine("The file name is empty!");
+                        Environment.Exit(-1);
+                    }
+                }
+                // 定义全局变量
+                else if (arg.StartsWith("-d"))
+                {
+                    // 格式:-d[KEY=VALUE]
+                    string keyValue = arg[2..];
+
+                    // 没有=
+                    if (!keyValue.Contains('='))
+                    {
+                        Tool.Printer.NoFormatErrLine($"The define usage error:{arg}");
+                        Environment.Exit(-1);
+                    }
+
+                    string key = keyValue[0..(keyValue.IndexOf('='))];
+                    string value = keyValue[(keyValue.IndexOf('=') + 1)..];
+
+                    // 变量已经存在
+                    if (GlobalVars.ContainsKey(key))
+                    {
+                        Tool.Printer.NoFormatErrLine($"The global variable is defined:{arg}");
+                        Environment.Exit(-1);
+                    }
+                    else GlobalVars.TryAdd(key, value);
+                }
+                // 非-开头
+                // Target
+                else if (!arg.StartsWith('-'))
+                {
+                    if (!AimTargets.Contains(arg))
+                        AimTargets.Add(arg);
+
+                    // Target已定义
+                    else Tool.Printer.WarnLine("The target is defined:{0}", arg);
+                }
+                // 位置指令
+                else
+                {
+                    Tool.Printer.NoFormatErrLine($"Unknown param:{arg}");
+                    Environment.Exit(-1);
+                }
+            }
+
+            // 打印logo
+            if (isPrintLogo)
+            {
+                Tool.Printer.PutLine("*** Doing Build System ***");
+                Tool.Printer.PutLine($"***   Version {DoingVersion}  ***");
+                Tool.Printer.PutLine("***   Made by GOSCPS   ***");
+            }
+
+            return;
+        }
+
         /// <summary>
         /// 入口函数
         /// </summary>
         /// <param name="args">命令行参数</param>
         static int Main(string[] args)
         {
-            {
-                // 默认打印logo
-                bool isPrintLogo = true;
-
-                foreach (var arg in args)
-                {
-                    // 一些小杂碎的事情
-                    if (arg == "--help" || arg == "-h")
-                    {
-                        PrintHelp();
-                        return 0;
-                    }
-                    else if (arg == "--version")
-                    {
-                        Tool.Printer.PutLine(DoingVersion.ToString());
-                        return 0;
-                    }
-                    else if (arg == "--info")
-                    {
-                        PrintInfo();
-                        return 0;
-                    }
-                    else if (arg == "--nologo")
-                    {
-                        isPrintLogo = false;
-                    }
-                    else if (arg == "--debug")
-                    {
-                        IsDebug = true;
-                    }
-                    // 指定线程数量
-                    else if (arg.StartsWith("-t"))
-                    {
-                        string num = arg[2..];
-
-                        if (int.TryParse(num, out int count))
-                        {
-                            // 确保线程数量不小于等于0
-                            if (count <= 0)
-                            {
-                                Tool.Printer.ErrLine("The thread count isn't more then one!");
-                                return -1;
-                            }
-                            else ThreadCount = count;
-                        }
-                        // 错误的格式
-                        else
-                        {
-                            Tool.Printer.ErrLine("The thread count isn't a right format!");
-                            return -1;
-                        }
-                    }
-                    // 指定构建文件
-                    else if (arg.StartsWith("-f"))
-                    {
-                        BuildFile = arg[2..];
-
-                        // 不接受空文件名称
-                        if (string.IsNullOrEmpty(BuildFile_))
-                        {
-                            Tool.Printer.ErrLine("The file name is empty!");
-                            return -1;
-                        }
-                    }
-                    // 定义全局变量
-                    else if (arg.StartsWith("-d"))
-                    {
-                        // 格式:-d[KEY=VALUE]
-                        string keyValue = arg[2..];
-
-                        // 没有=
-                        if (!keyValue.Contains('='))
-                        {
-                            Tool.Printer.NoFormatErrLine($"The define usage error:{arg}");
-                            return -1;
-                        }
-
-                        string key = keyValue[0..(keyValue.IndexOf('='))];
-                        string value = keyValue[(keyValue.IndexOf('=') + 1)..];
-
-                        // 变量已经存在
-                        if (GlobalVars.ContainsKey(key))
-                        {
-                            Tool.Printer.NoFormatErrLine($"The global variable is defined:{arg}");
-                            return -1;
-                        }
-                        else GlobalVars.TryAdd(key, value);
-                    }
-                    // 非-开头
-                    // Target
-                    else if (!arg.StartsWith('-'))
-                    {
-                        if (!AimTargets.Contains(arg))
-                            AimTargets.Add(arg);
-
-                        // Target已定义
-                        else Tool.Printer.WarnLine("The target is defined:{0}", arg);
-                    }
-                    // 位置指令
-                    else
-                    {
-                        Tool.Printer.NoFormatErrLine($"Unknown param:{arg}");
-                        return -1;
-                    }
-                }
-
-                // 打印logo
-                if (isPrintLogo)
-                {
-                    Tool.Printer.PutLine("*** Doing Build System ***");
-                    Tool.Printer.PutLine($"***   Version {DoingVersion}  ***");
-                    Tool.Printer.PutLine("***   Made by GOSCPS   ***");
-                }
-            }
+            // 解析参数
+            ProcessArgs(args);
 
             Stopwatch timer = new();
             timer.Start();
 
+            // 执行
             try
             {
+                // 解析
                 Engine.Parsing.LoadFileToRunspace(
                     Engine.MainRunspace.Get(), BuildFile);
 
-                if (!Engine.Worker.Run())
+                if(AimTargets.Count == 0)
                 {
-                    throw new DException.RuntimeException("The worker return error!");
+                    Tool.Printer.WarnLine("No input target.Build `Default`.");
+                    AimTargets.Add("Default");
+                }
+
+                // 分析依赖
+                Engine.WorkerManager first = new(ThreadCount,KeepGoOn);
+                Engine.WorkerManager last = new(ThreadCount, KeepGoOn);
+
+                var queue = Engine.Parsing.MakeRunspaceDeps(Engine.MainRunspace.Get(),AimTargets);
+
+                foreach(var f in queue.first)
+                {
+                    first.AddTask(f);
+                }
+                foreach (var l in queue.last)
+                {
+                    last.AddTask(l);
+                }
+
+                // 执行
+                Engine.WorkerTeam team = new(KeepGoOn);
+
+                team.WorkList.Enqueue(first);
+                team.WorkList.Enqueue(last);
+
+                if (!team.Execute())
+                {
+                    throw new DException.RuntimeException("Execute fail down!");
                 }
             }
             catch (Exception err)
@@ -275,6 +331,7 @@ namespace Doing
 
                 Tool.Printer.ErrLine("```");
 
+                Tool.Printer.WarnLine("If you want to know more info.Use `--debug` parameter.");
                 Tool.Printer.PutLine($"Use {timer.Elapsed:G}");
                 return -1;
             }

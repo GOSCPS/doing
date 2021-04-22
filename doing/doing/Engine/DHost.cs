@@ -19,7 +19,7 @@ namespace Doing.Engine
     /// <summary>
     /// Doing自己实现的Host
     /// </summary>
-    public class DHost : PSHost
+    public class DHost : PSHost ,IDisposable
     {
         private int exitCode_ = 0;
 
@@ -37,9 +37,22 @@ namespace Doing.Engine
         /// </summary>
         public Runspace HostRunspace { get; init; }
 
-        public DHost(Runspace runspace)
+        /// <summary>
+        /// Host工作器
+        /// </summary>
+        public WorkerManager HostWorker { get; init; }
+
+        public DHost(Runspace runspace, WorkerManager worker)
         {
             HostRunspace = runspace;
+            HostWorker = worker;
+            runspace.RegisteredRunspace(InstanceId);
+        }
+
+        public void Dispose()
+        {
+            GC.SuppressFinalize(this);
+            Runspace.LayoutRunspace(InstanceId);
         }
 
         public override CultureInfo CurrentCulture => System.Threading.Thread.CurrentThread.CurrentCulture;

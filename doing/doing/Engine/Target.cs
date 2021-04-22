@@ -83,14 +83,20 @@ namespace Doing.Engine
         public Target? MainTarget = null;
 
         /// <summary>
+        /// Main是否已经构建过
+        /// </summary>
+        public bool IsMainBuilt = false;
+
+        /// <summary>
+        /// 初始化Target
+        /// </summary>
+        public Target? InitTarget = null;
+
+        /// <summary>
         /// 运行空间
         /// </summary>
         public Runspace SourceRunspace { get; init; }
 
-        /// <summary>
-        /// Main是否已经构建过
-        /// </summary>
-        public bool IsMainBuilt = false;
 
         public BuildFileInfo(
             FileInfo source,
@@ -122,7 +128,7 @@ namespace Doing.Engine
         /// </summary>
         /// 
         /// <returns>执行成功返回true，否则false</returns>
-        public bool Execute();
+        public bool Execute(WorkerManager manager);
     }
 
     /// <summary>
@@ -173,14 +179,14 @@ namespace Doing.Engine
         /// <summary>
         /// 执行
         /// </summary>
-        public bool Execute()
+        public bool Execute(WorkerManager manager)
         {
             lock (RunLocker)
             {
                 // 初始化
                 TargetExecuter runer = new(this);
                 InitialSessionState iss = InitialSessionState.CreateDefault();
-                DHost host = new(TargetRunspace);
+                DHost host = new(TargetRunspace, manager);
 
                 // 添加Cmdlet和Function
                 Cmdlet.StandardCmdlet.AddStandardCmdlet(iss);
@@ -191,9 +197,6 @@ namespace Doing.Engine
 
                 // 创建pwsh
                 TargetExecuter.CreatePwsh(runsce, runer);
-
-                // 注册host
-                TargetRunspace.RegisteredRunspace(host.InstanceId);
 
                 // 清除之前的输出和命令
                 runer.shell!.Commands.Clear();
@@ -207,9 +210,6 @@ namespace Doing.Engine
 
                 // 关闭运行空间
                 runer.shell.Runspace.Close();
-
-                // 注销host
-                Runspace.LayoutRunspace(host.InstanceId);
 
                 // 调用错误
                 if (runer.shell!.HadErrors)

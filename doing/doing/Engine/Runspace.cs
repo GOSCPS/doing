@@ -36,6 +36,7 @@ namespace Doing.Engine
 
     /// <summary>
     /// Target运行空间
+    /// 负责储存变量等
     /// </summary>
     public class Runspace
     {
@@ -48,7 +49,7 @@ namespace Doing.Engine
         { get; } = new();
 
         /// <summary>
-        /// 所有Target
+        /// 文件包含的所有Target
         /// key = Target.Name,
         /// value = Target
         /// </summary>
@@ -56,11 +57,11 @@ namespace Doing.Engine
         { get; } = new();
 
         /// <summary>
-        /// 目标Target
+        /// 目标Target(待执行)
         /// key = Target.name
         /// value = Target
         /// </summary>
-        public ConcurrentDictionary<string, Target> AimTarget
+        public ConcurrentQueue<Target> AimTargetQueue
         { get; } = new();
 
         /// <summary>

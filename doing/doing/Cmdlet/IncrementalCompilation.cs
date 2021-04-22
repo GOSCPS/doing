@@ -36,7 +36,7 @@ namespace Doing.Cmdlet
         }
     }
 
-    #region Source
+    #region Add-Source
     /// <summary>
     /// 添加源文件
     /// </summary>
@@ -115,7 +115,7 @@ namespace Doing.Cmdlet
     }
     #endregion
 
-    #region Output
+    #region Add-Output
     /// <summary>
     /// 添加输出文件
     /// </summary>
@@ -195,13 +195,14 @@ namespace Doing.Cmdlet
 
     #endregion
 
+    #region Check-Compile
     [Cmdlet("Check","Compile")]
     class CheckCompile : System.Management.Automation.Cmdlet
     {
         public const string CallName = "Check-Compile";
 
-        [Parameter(Position = 0, ValueFromPipeline = true, Mandatory = true)]
-        public object[]? InputObject { get; set; } = null;
+        [Parameter(Position = 0,ValueFromPipeline = true, Mandatory = true)]
+        public PSObject? InputObject { get; set; } = null;
 
         /// <summary>
         /// 处理输入
@@ -254,7 +255,7 @@ namespace Doing.Cmdlet
                 WriteError(Tool.ErrorHelper.NewError("The input object is null!", ErrorCategory.InvalidArgument, InputObject));
                 return;
             }
-            var compile = ProcessInput(InputObject);
+            var compile = ProcessInput(InputObject.BaseObject);
 
             DateTime? oldestOutput = null;
             DateTime? newestSource = null;
@@ -316,7 +317,7 @@ namespace Doing.Cmdlet
 
     }
 
-
+    #endregion
 
 
 }

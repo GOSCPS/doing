@@ -7,48 +7,118 @@
 //===========================================================
 
 using System;
+using System.Collections.Concurrent;
 using System.Threading;
 
 namespace Doing.Engine
 {
     /// <summary>
-    /// 工作引擎
+    /// 工作组
     /// </summary>
-    public static class Worker
+    public class WorkerTeam
     {
+        public ConcurrentQueue<WorkerManager> WorkList { get; } = new();
+
+        /// <summary>
+        /// 有错误是否继续执行
+        /// </summary>
+        public bool KeepGoOn { get; init; }
+
+        public WorkerTeam(bool keepGoOn = false)
+        {
+            KeepGoOn = keepGoOn;
+        }
+
+        /// <summary>
+        /// 执行
+        /// </summary>
+        /// 
+        /// <returns>执行成功返回true，否则false/returns>
+        public bool Execute()
+        {
+            bool ret = true;
+            while (true)
+            {
+                if (WorkList.TryDequeue(out WorkerManager? worker))
+                {
+                    bool executeResult = worker.Run();
+                    // 执行
+                    if (!executeResult && !KeepGoOn)
+                    {
+                        return false;
+                    }
+
+                    if (!executeResult)
+                    {
+                        // 有错误
+                        ret = false;
+                    }
+                }
+                else break;
+            }
+
+            return ret;
+        }
+    }
+
+    /// <summary>
+    /// 工作引擎
+    /// 负责执行Target等
+    /// </summary>
+    public class WorkerManager
+    {
+        /// <summary>
+        /// 最大线程数量
+        /// </summary>
+        public int MaxThread { get; init; }
+
+        /// <summary>
+        /// 在有错误的情况下是否继续
+        /// </summary>
+        public bool KeppGoOn { get; init; }
+
         /// <summary>
         /// 任务队列
         /// </summary>
-        private static readonly System.Collections.Concurrent.ConcurrentQueue
+        private readonly System.Collections.Concurrent.ConcurrentQueue
             <IExecutable> taskList = new();
 
         /// <summary>
         /// 完成列表
         /// </summary>
-        private static readonly System.Collections.Concurrent.ConcurrentBag
+        private readonly System.Collections.Concurrent.ConcurrentBag
             <string> finishList = new();
 
         /// <summary>
         /// 锁
         /// </summary>
-        private static readonly object locker = new();
+        private readonly object locker = new();
 
         /// <summary>
         /// 线程列表
         /// </summary>
-        private static Thread[] threadList = Array.Empty<Thread>();
+        private Thread[] threadList = Array.Empty<Thread>();
 
         /// <summary>
         /// 错误列表
         /// </summary>
-        private static readonly System.Collections.Concurrent.ConcurrentBag
+        private readonly System.Collections.Concurrent.ConcurrentBag
             <Exception> errList = new();
+
+        public WorkerManager(int maxThread,bool keepGoOn = false)
+        {
+            if (maxThread <= 0)
+                throw new ArgumentException("The max count is less or equal to zero!", nameof(maxThread));
+
+            MaxThread = maxThread;
+            KeppGoOn = keepGoOn;
+        }
 
         /// <summary>
         /// 添加目标
         /// </summary>
         /// <param name="target"></param>
-        public static void AddTask(IExecutable target)
+        public void AddTask(IExecutable target)
         {
             taskList.Enqueue(target);
         }
@@ -58,7 +128,7 @@ namespace Doing.Engine
         /// </summary>
         /// <param name="target"></param>
         /// <returns></returns>
-        public static bool IsFinish(string targetName)
+        public bool IsFinish(string targetName)
         {
             foreach (var finished in finishList)
             {
@@ -72,7 +142,7 @@ namespace Doing.Engine
         /// 获取已完成目标无序列表
         /// </summary>
         /// <returns></returns>
-        public static string[] GetFinishList()
+        public string[] GetFinishList()
         {
             return finishList.ToArray();
         }
@@ -81,7 +151,7 @@ namespace Doing.Engine
         /// <summary>
         /// 刷新线程
         /// </summary>
-        public static void ReFlushThread()
+        public void ReFlushThread()
         {
             lock (locker)
             {
@@ -109,19 +179,15 @@ namespace Doing.Engine
         /// </summary>
         /// 
         /// <returns>如果返回null，则不能获取任务</returns>
-        private static IExecutable? GetTask()
+        private IExecutable? GetTask()
         {
-            // 错误则不再继续构建
-            if (!errList.IsEmpty)
-                return null;
-
             if (taskList.TryDequeue(out IExecutable? result))
             {
 
                 while (true)
                 {
                     // 有错误则不继续等待
-                    if (!errList.IsEmpty)
+                    if (!errList.IsEmpty && !KeppGoOn)
                         return null;
 
                     // 检查前置是否完成
@@ -148,32 +214,29 @@ namespace Doing.Engine
         /// <summary>
         /// 工作线程
         /// </summary>
-        private static void WorkThreadMethod()
+        private void WorkThreadMethod()
         {
-            IExecutable? target = null;
+            IExecutable? executer = null;
 
             try
             {
                 while (true)
                 {
-                    // 有错误则不再继续
-                    if (!errList.IsEmpty)
-                        return;
-
-                    target = GetTask();
+                    executer = GetTask();
 
                     // null为无效target
-                    // 视为错误，退出
-                    if (target == null)
+                    // 退出
+                    if (executer == null)
                         return;
 
-                    if (!target.Execute())
+                    // 错误
+                    if (!executer.Execute(this))
                     {
                         throw new DException.RuntimeException("The executable execute fail down!");
                     }
 
                     // 添加到完成列表
-                    finishList.Add(target.Name);
+                    finishList.Add(executer.Name);
                 }
             }
             catch (Exception err)
@@ -181,8 +244,8 @@ namespace Doing.Engine
                 errList.Add(err);
                 Tool.Printer.NoFormatErrLine($"*** {Thread.CurrentThread.Name} Error!");
 
-                if (target != null)
-                    Tool.Printer.ErrLine("*** Err at task `{0}` ", target.Name);
+                if (executer != null)
+                    Tool.Printer.ErrLine("*** Err at task `{0}` ", executer.Name);
 
                 Tool.Printer.NoFormatErrLine(err.ToString());
             }
@@ -193,11 +256,11 @@ namespace Doing.Engine
         /// 运行
         /// </summary>
         /// <returns>成功返回true，否则false</returns>
-        public static bool Run()
+        public bool Run()
         {
             // 初始化线程
             lock (locker)
-                threadList = new Thread[Program.ThreadCount];
+                threadList = new Thread[MaxThread];
 
             ReFlushThread();
 
@@ -229,6 +292,7 @@ namespace Doing.Engine
             // 检索错误列表
             if (errList.IsEmpty)
                 return true;
+
             else return false;
         }
 
