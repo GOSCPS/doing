@@ -101,4 +101,76 @@ namespace Doing.Cmdlet
             WriteObject(value);
         }
     }
+
+
+    /// <summary>
+    /// 删除DoingVariable
+    /// </summary>
+    [Cmdlet(VerbsCommon.Remove, "DVariale")]
+    class RemoveDVariable : PSCmdlet
+    {
+        public const string CallName = "Remove-DVariable";
+
+        /// <summary>
+        /// 变量名
+        /// </summary>
+        [Parameter(Position = 0, Mandatory = true, ValueFromPipeline = true)]
+        public string? Name { get; set; } = "";
+
+        protected override void ProcessRecord()
+        {
+            // 检查参数
+            if (string.IsNullOrEmpty(Name))
+            {
+                WriteError(Tool.ErrorHelper.NewError("The variable name is null or empty!", ErrorCategory.InvalidArgument, Name!));
+                return;
+            }
+
+            // 获取运行空间
+            if (!Engine.Runspace.TryGetRunspace(Host.InstanceId, out Engine.Runspace? runspace))
+            {
+                WriteError(Tool.ErrorHelper.NewError("Try to get doing runspace fail down!", ErrorCategory.InvalidArgument, Host.InstanceId));
+                return;
+            }
+
+            // 删除变量
+            runspace!.GlobalVariableTable.TryRemove(Name, out _);
+        }
+    }
+
+    /// <summary>
+    /// 检查DoingVariable
+    /// </summary>
+    [Cmdlet("Check", "DVariale")]
+    [OutputType(typeof(bool))]
+    class CheckDVariable : PSCmdlet
+    {
+        public const string CallName = "Check-DVariable";
+
+        /// <summary>
+        /// 变量名
+        /// </summary>
+        [Parameter(Position = 0, Mandatory = true, ValueFromPipeline = true)]
+        public string? Name { get; set; } = "";
+
+        protected override void ProcessRecord()
+        {
+            // 检查参数
+            if (string.IsNullOrEmpty(Name))
+            {
+                WriteError(Tool.ErrorHelper.NewError("The variable name is null or empty!", ErrorCategory.InvalidArgument, Name!));
+                return;
+            }
+
+            // 获取运行空间
+            if (!Engine.Runspace.TryGetRunspace(Host.InstanceId, out Engine.Runspace? runspace))
+            {
+                WriteError(Tool.ErrorHelper.NewError("Try to get doing runspace fail down!", ErrorCategory.InvalidArgument, Host.InstanceId));
+                return;
+            }
+
+            // 检查变量是否定义
+            WriteObject(runspace!.GlobalVariableTable.ContainsKey(Name));
+        }
+    }
 }

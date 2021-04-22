@@ -45,6 +45,19 @@ namespace Doing.Cmdlet
                     typeof(GetDVariable),
                     null));
 
+
+            state.Commands.Add(
+                new SessionStateCmdletEntry(
+                    RemoveDVariable.CallName,
+                    typeof(RemoveDVariable),
+                    null));
+
+            state.Commands.Add(
+                new SessionStateCmdletEntry(
+                    CheckDVariable.CallName,
+                    typeof(CheckDVariable),
+                    null));
+
             state.Commands.Add(
                 new SessionStateCmdletEntry(
                     AddOutput.CallName,
