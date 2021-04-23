@@ -1,0 +1,163 @@
+\documentclass[UTF-8,twoside,a4paper,final,titlepage]{ctexbook}
+
+% Include some package usual use...
+\usepackage{xcolor}
+\usepackage{graphicx}
+
+% 调用 makeidx 宏包，用来处理索引
+\usepackage{makeidx} 
+
+% 获取标题名称
+\usepackage{nameref}
+\makeatletter
+\newcommand*{\currentname}{\@currentlabelname}
+\makeatother
+
+% 开启索引的收集
+\makeindex
+
+% 指定参考文献样式为 plain
+\bibliographystyle{plain}
+
+% 调用 fontspec 宏包，用来处理字体
+\usepackage{fontspec}[no-math]
+
+% 设置字体
+\setmainfont{TeX Gyre Pagella}
+\setsansfont{Droid Sans}
+\setmonofont{CMU Typewriter Text}
+
+% 设置中文字体
+%\setCJKmainfont{Song}
+%\setCJKsansfont{Song}
+%\setCJKmonofont{Song}
+
+% 设置数学字体
+%\usepackage{unicode-math}
+%\setmathfont{Fira Math}
+
+% 设置行距
+\linespread{1}
+
+% 设置页面
+% 上下边距 0.85 英寸，左右边距0.9英寸
+\usepackage{geometry}
+\geometry{left=0.9in,right=0.9in,top=0.85in,bottom=0.85in}
+
+% 顶部对齐
+\raggedbottom
+
+% 修改页眉页脚
+% By fancyhdr
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+
+\fancyhead[C]{GOSCPS-Technical Information}
+
+\fancyhead[RE]{\bfseries{}\thepage{} - \currentname{}}
+\fancyhead[LO]{\bfseries{}\thepage{} - \currentname{}}
+
+\fancyhead[RO]{By Go\LaTeXe{}}
+\fancyhead[LE]{By Go\LaTeXe{}}
+
+% 设置代码环境
+\usepackage{listings}
+\usepackage{keyval}
+
+\lstset{
+	numbers=left,
+	tabsize=4,
+	frame=shadowbox,
+	escapeinside=``,
+	breakatwhitespace=false,
+	breaklines=true,
+	keepspaces=true,
+	showspaces=false,                
+	showstringspaces=false,
+	showtabs=false,
+	backgroundcolor=\color{white},   
+	commentstyle=\color{black},
+	keywordstyle=\color{blue},
+	numberstyle=\tiny\color{red},
+	stringstyle=\color{red},
+	basicstyle=\footnotesize,
+}
+
+% Kepp safe
+% danger package call in last
+% 设置超链接
+\usepackage[colorlinks,
+linkcolor=blue,
+anchorcolor=blue,
+citecolor=blue]{hyperref}
+\hypersetup{colorlinks=true,pdftitle=GOSCPS-Technical Documentation,pdfauthor=GOSCPS,pdfsubject=Technical,pdfkeywords=GOSCPS}
+
+\begin{document}
+	% Auto to title
+	\frontmatter
+	
+	% 制作标题页
+	\title{Technical Documentation Of Greater Open Source Co-Prosperity Sphere} 
+	\author{Made by Greater Open Source Co-Prosperity Sphere\thanks{goscps@foxmail.com}}
+	\date{\today}
+	\maketitle
+	
+	% 一些友好的警告
+	\textbf{警告：此文档通常也能称为用户文档。
+		本文档所有内容均使用GOSCPS License授权。\newline{}
+		本文档附带GOSCPS License一份：}
+	\begin{lstlisting}
+		GOSCPS 许可证
+		
+		Version 2, 2021-2-14
+		
+		Copyright (c) 2020-2021 GOSCPS 保留所有权利.
+		
+		定义：下文及上文中的"GOSCPS"均为Greater Open Source Co-Prosperity Sphere的简称。
+		定义：任何基于本软件的源码或二进制的再开发，或者包含本软件任何一部分源码或二进制的源码或二进制，均称为：经过修改的本软件的源码或二进制。
+		
+		在任何人满足以下条款的情况下，可以散播本软件源码或二进制。无论是否经过修改。
+		本许可证对于文档或其他作品，本许可证同样适用。
+		
+		1. 对于散播的源码或二进制，无论是否经过修改。均需要在明显位置标明：
+		“本产品内含有由GOSCPS及其它贡献者所编写的代码。”
+		
+		2. 对于散播的源码或二进制，无论其是否经过修改，需要保留本许可证完整版本，并且不允许任何修改。
+		
+		3. 在未经允许的情况下，不得使用GOSCPS或者本软件的贡献者的名义来为本软件的源码或二进制做任何表示支持、认可或推广、促销之行为，无论本软件的源码或二进制是否经过修改。
+		
+		4. 不得在散播本软件源码或二进制时提供任何明示或暗示，无论本软件源码或二进制是否经过修改。
+		
+		5. 对于散播经过修改的本软件的源码或二进制，禁止使用以下许可证：
+		GNUGPLv3
+		GNUGPLv2
+		GNULGPLv3
+		GNULGPLv2.1
+		GNUAllPermissive
+		GNUAGPLv3.0
+		
+		免责声明：
+		* 本软件（包括源码及其二进制）不负任何明示或默示之担保责任，无论本软件（包括源代码及二进制)是否经过修改。
+		* GOSCPS及本软件之贡献者，无论任何条件、或因非违约之侵权，
+		* 对于任何因使用本软件（包括源代码及二进制)所产生的任何结果不负任何责任，
+		* 即在事前告知可能会造成此类损害的情形下亦然，无论本软件（包括源代码及二进制)是否经过修改。
+	\end{lstlisting}
+	\textbf{你已被警告!}
+	
+	% 制作目录
+	\tableofcontents
+	
+	% 交给用户
+	\mainmatter
+	
+	\input{Main.tex}
+	
+	\backmatter
+	
+	\input{Back.tex}
+	
+	% 生成索引
+	\printindex
+	
+\end{document}

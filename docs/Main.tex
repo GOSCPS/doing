@@ -1,0 +1,35 @@
+\chapter{Go\LaTeX{}文档}
+\section{\LaTeX{}}
+\subsection{\LaTeX{}简介}
+
+\LaTeX{}是一套被广泛使用的专业排版系统。可以生产出高质量的印刷品。
+GOSCPS已经将\LaTeX{}作为官方的文档格式，这也是Go\LaTeX{}存在的原因。
+
+\section{Go\LaTeX{}}
+\subsection{Go\LaTeX{}简介}
+Go\LaTeX{}是由GOSCPS所设置的一些文档规范——通常出现在G\-OS\-CP\-S的文档当中。
+这份规范目前尚未完善，它仅仅设置了一些简单的内容，但可能会逐渐补全。
+
+\subsection{Go\LaTeX{}结构}
+GO\LaTeX{}的架构:
+
+\begin{itemize}
+    \item Go\LaTeX{}.tex
+    \item Main.tex
+    \item Back.tex
+\end{itemize}
+
+如果你想定义你自己的文档：你只需要替换Main.tex和Back.tex即可。并且通常你不需要修改Go\LaTeX{}.tex文件的任何内容。
+它会自动生成标题页和目录。我们在其中指定了一些硬性规定，类似于强制使用UTF-8编码。同时我们也设置了页面的格式等。如果你需要附加宏包，请自便。
+\newline{}
+下面是一些样式测试。
+
+\begin{lstlisting}[language=C++]
+//Hello World by C++
+#include <iostream>
+using namespace std;
+int main(int argc,char* argv[]){
+	cout << "Hello World" << endl;
+	return 0;
+}
+\end{lstlisting}
