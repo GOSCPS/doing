@@ -41,11 +41,13 @@ namespace Doing.Cmdlet
             if (string.IsNullOrEmpty(Name))
             {
                 WriteError(Tool.ErrorHelper.NewError("The variable name is null or empty!", ErrorCategory.InvalidArgument, Name!));
+                return;
             }
             
             if(InputObject == null)
             {
                 WriteError(Tool.ErrorHelper.NewError("The variable value is null!", ErrorCategory.InvalidArgument, Name!));
+                return;
             }
 
             // 获取运行空间

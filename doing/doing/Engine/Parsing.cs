@@ -26,6 +26,7 @@ namespace Doing.Engine
         /// </summary>
         public const string MainTargetName = "Main";
 
+        #region PreProcess
         /// <summary>
         /// 用于记录Import过的文件
         /// </summary>
@@ -129,6 +130,9 @@ namespace Doing.Engine
             return filesInfo.ToArray();
         }
 
+        #endregion
+
+        #region ParseTarget
         // Target定义的正则表达式
         private static readonly
             Regex targetRegex = new(@"^@Target\s+(?<Name>[a-zA-Z0-9-_\u4e00-\u9fa5]+)\s*$");
@@ -259,6 +263,9 @@ namespace Doing.Engine
             }
         }
 
+        #endregion
+
+        #region ParseFunction
         /// <summary>
         /// 函数定义的正则表达式
         /// </summary>
@@ -299,6 +306,9 @@ namespace Doing.Engine
             }
         }
 
+        #endregion
+
+        #region Process
         /// <summary>
         /// 处理
         /// 产生Target
@@ -437,6 +447,9 @@ namespace Doing.Engine
             CheckDepends(buildFile);
         }
 
+        #endregion
+
+        #region CheckDeps
         /// <summary>
         /// 检查依赖
         /// </summary>
@@ -477,12 +490,14 @@ namespace Doing.Engine
             }
         }
 
+        #endregion
+
         /// <summary>
-        /// 加载文件到运行空间(包括依赖)
+        /// 加载文件到运行空间，不处理依赖
         /// </summary>
         /// 
-        /// <param name="runspace"></param>
-        /// <param name="fileName"></param>
+        /// <param name="runspace">运行空间</param>
+        /// <param name="fileName">文件名称</param>
         public static void LoadFileToRunspace(
             Runspace runspace,
             string fileName)
@@ -506,6 +521,7 @@ namespace Doing.Engine
             return;
         }
 
+        #region ParseFile
         /// <summary>
         /// 解析文件
         /// </summary>
@@ -523,6 +539,7 @@ namespace Doing.Engine
             // 负责检查重名Target
             foreach (var f in fileInfo)
             {
+                // 解析文件
                 Process(f, runspace);
                 var targets = f.AllTargets;
 
@@ -564,7 +581,9 @@ namespace Doing.Engine
 
             return (fileInfo, targetTable.Values.ToArray(), functionTable.Values.ToArray());
         }
+        #endregion
 
+        #region MakeRunspaceDeps
         /// <summary>
         /// 处理依赖
         /// </summary>
@@ -572,20 +591,18 @@ namespace Doing.Engine
             Runspace runspace,
             List<string> aimTargets)
         {
-            // 用户未指定
-            // 添加Default Target
+            // 用户未指定Aim
             if (aimTargets.Count == 0)
             {
                 throw new ArgumentException("The aim target count is zero!",nameof(aimTargets));
             }
 
             // 查找依赖
-            List<Target> aims = new();
             foreach (var t in aimTargets)
             {
                 if (runspace.AllTarget.TryGetValue(t, out Target? value))
                 {
-                    aims.Add(value);
+                    runspace.AimTargetQueue.Enqueue(value);
                 }
                 else throw new ArgumentException($"The aim target `{t}` not found!",nameof(aimTargets));
             }
@@ -594,7 +611,7 @@ namespace Doing.Engine
             Queue<Target> first = new();
 
             // 检查依赖
-            var depends = Algorithm.Topological.Sort(aims.ToArray(), runspace.AllTarget.Values.ToArray());
+            var depends = Algorithm.Topological.Sort(runspace.AimTargetQueue.ToArray(), runspace.AllTarget.Values.ToArray());
 
             // 添加Init
             foreach(var file in runspace.SourceFile)
@@ -627,5 +644,6 @@ namespace Doing.Engine
             // last其次
             return (first,last);
         }
+        #endregion
     }
 }

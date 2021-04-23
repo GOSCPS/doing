@@ -21,6 +21,7 @@ namespace Doing.Cmdlet
         public static void AddStandardCmdlet(InitialSessionState state)
         {
 
+            #region VersionControl
             state.Commands.Add(
                 new SessionStateCmdletEntry(
                     CompareVersion.CallName,
@@ -32,6 +33,10 @@ namespace Doing.Cmdlet
                     GetVersion.CallName,
                     typeof(GetVersion),
                     null));
+
+            #endregion
+
+            #region VariabelControl
 
             state.Commands.Add(
                 new SessionStateCmdletEntry(
@@ -58,6 +63,10 @@ namespace Doing.Cmdlet
                     typeof(CheckDVariable),
                     null));
 
+            #endregion
+
+            #region IncCompile
+
             state.Commands.Add(
                 new SessionStateCmdletEntry(
                     AddOutput.CallName,
@@ -75,6 +84,24 @@ namespace Doing.Cmdlet
                     CheckCompile.CallName,
                     typeof(CheckCompile),
                     null));
+
+            #endregion
+
+            #region System
+
+            state.Commands.Add(
+                new SessionStateCmdletEntry(
+                    GetAimTarget.CallName,
+                    typeof(GetAimTarget),
+                    null));
+
+            state.Commands.Add(
+                new SessionStateCmdletEntry(
+                    CheckTargetFinish.CallName,
+                    typeof(CheckTargetFinish),
+                    null));
+
+            #endregion
         }
 
 
