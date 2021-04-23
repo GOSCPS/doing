@@ -1,35 +1,192 @@
-\chapter{Go\LaTeX{}文档}
-\section{\LaTeX{}}
-\subsection{\LaTeX{}简介}
+\chapter{Doing用户手册}
 
-\LaTeX{}是一套被广泛使用的专业排版系统。可以生产出高质量的印刷品。
-GOSCPS已经将\LaTeX{}作为官方的文档格式，这也是Go\LaTeX{}存在的原因。
+\section{Doing的命令行使用}
 
-\section{Go\LaTeX{}}
-\subsection{Go\LaTeX{}简介}
-Go\LaTeX{}是由GOSCPS所设置的一些文档规范——通常出现在G\-OS\-CP\-S的文档当中。
-这份规范目前尚未完善，它仅仅设置了一些简单的内容，但可能会逐渐补全。
+\subsection{安装}
 
-\subsection{Go\LaTeX{}结构}
-GO\LaTeX{}的架构:
+要安装Doing，需要先安装Dotnet。因为Doing是基于Dotnet所编写的。在安装了Dotnet的情况下，一般可以使用以下命令(Windows下，可以通过可以使用git和dotnet的PowerShell来输入)安装:
+\begin{lstlisting}
+$ cd 你要安装的目录
+$ git clone https://github.com/GOSCPS/doing.git
+$ cd doing/doing
+$ dotnet build --configuration Release
+$ cd \bin\Release\net5.0
+$ pwd
+之后，doing应该位于当前目录。
+你应该把它添加到你的系统的环境变量。
+\end{lstlisting}
 
+
+\subsection{使用}
+要使用Doing，可以通过键入`doing --Help`来获取帮助。\newline{}
+不过我们仍然有一些值得注意的点：\newline{}
 \begin{itemize}
-    \item Go\LaTeX{}.tex
-    \item Main.tex
-    \item Back.tex
+	\item 如果未设置，默认使用一个线程
+	\item 如果未设置，默认使用`make.doing`作为构建文件
+	\item 如果未设置，默认使用`Default`目标
+	\item 如果未设置，默认碰到错误则退出
 \end{itemize}
 
-如果你想定义你自己的文档：你只需要替换Main.tex和Back.tex即可。并且通常你不需要修改Go\LaTeX{}.tex文件的任何内容。
-它会自动生成标题页和目录。我们在其中指定了一些硬性规定，类似于强制使用UTF-8编码。同时我们也设置了页面的格式等。如果你需要附加宏包，请自便。
-\newline{}
-下面是一些样式测试。
 
-\begin{lstlisting}[language=C++]
-//Hello World by C++
-#include <iostream>
-using namespace std;
-int main(int argc,char* argv[]){
-	cout << "Hello World" << endl;
-	return 0;
-}
+
+\section{Doing脚本的编写}
+\subsection{编写Target}
+
+Doing基于PowerShell，Doing里真正有实际作用的语句都通过PowerShell编写。如果你还不熟悉PowerShell，请先学习如何编写它。
+那么，请看Hello World
+
+\begin{lstlisting}[language=bash]
+# 这是一个注释
+
+@Target Default
+	Write-Host "Hello World!"
+@EndTarget
 \end{lstlisting}
+如你所见，这就是Doing的Hello World。把它保存到`make.doing`文件，然后直接调用doing，它应该输出`Hello World`。\newline{}
+
+接下来让我们研究它的语法。
+最简单的，注释：它使用\#作为注释字符。\#开头的任何行都被忽略。\newline{}
+
+在第三行，我们定义了一个`Target`。`Target`是Doing构建的基本单位，也是最小单位。要定义一个Target很简单：
+\begin{lstlisting}
+
+# 注意，要使用@作为开头
+@Target 你的Target名称
+
+# Some Other
+
+# 使用@EndTarget来结束Target
+@EndTarget
+
+
+# 注意:
+# Doing可能会接受一些其他的Target的名称(如中文)
+# 但我们仍然建议Target名称仅使用字母，下划线和数字的组合。
+\end{lstlisting}
+作为一个构建系统，没有依赖怎么能行呢？
+\begin{lstlisting}
+
+# 定义了一个Target
+# 依赖于Dep
+
+@Target Default : Dep
+
+	Write-Host "From Default"
+	
+@EndTarget
+\end{lstlisting}
+看到了吧，要定义依赖很简单：在Target的名称之后附上`:`之后附上依赖列表就行了(多个依赖，使用空格分割即可)。
+
+如果你直接运行上面的代码，会得到错误:
+\begin{lstlisting}
+*** Miss depend `Dep` in target `Default` !
+\end{lstlisting}
+看起来，我们需要一个名为Dep的Target。\newline{}
+接下来，我们修改源文件：
+\begin{lstlisting}
+	
+	# 定义了一个Target
+	# 依赖于Dep
+	
+	@Target Default : Dep
+	
+	Write-Host "From Default"
+	
+	@EndTarget
+	
+	@Target Dep
+	
+	Write-Host "From Dep!"
+	
+	@EndTarget
+\end{lstlisting}
+之后运行doing，我们可以看到输出:
+\begin{lstlisting}
+From Dep!
+From Default!
+\end{lstlisting}
+Doing正确地解析了他们之间的依赖关系。并且Default晚于其依赖Dep执行。
+
+
+\subsection{编写Function}
+除此之外，Doing还可以定义PowerShell函数。函数的命名规则同Target(PowerShell可能会做额外检查,所以需要也符合PowerShell的命名规则)。
+\begin{lstlisting}
+
+@Function 你的函数名称
+
+# 你的函数体
+
+@EndFunction
+
+\end{lstlisting}
+函数体已经处于函数作用域内，不需要额外定义：
+\begin{lstlisting}
+# 正确的函数定义
+@Function ATestFunc
+	
+	Write-Host "Hello" $args[0]
+	
+@EndTarget
+
+# 错误的函数定义
+@Function AErrorFunc
+
+# 这个函数将会什么都不做
+function AErrorFunc{
+	Write-Host "Hello" $args[0]
+}
+
+@EndTarget
+
+\end{lstlisting}
+
+
+\subsection{预处理}
+Doing中，存在一些特别的注释，它可以修改Doing的行为。例如引用文件等，我们称他们为`预处理`。预处理以\#{}\#{}!开头。
+目前版本中，Doing只有两个预处理选项:
+\begin{lstlisting}
+	
+	# 通知编译器要引入文件
+	# 但是不会直接复制到此处
+	# 而是会解析引用的文件
+	##! Import <要引用的文件名称>
+	
+	# 检查Doing版本是否大于等于此版本号
+	# 如果小于，则会打印错误
+	##! VersionRequired <版本号>
+	
+
+\end{lstlisting}
+
+
+
+\subsection{Init和Main}
+Doing中存在两个特别的Target：`Init`和`Main`。
+这两个Target会比任何其他Target提前构建。但是Doing不保证`Init`和`Main`谁先构建。
+
+\newline{}
+每个文件都可以拥有这两个Target，这两个Target不能拥有依赖，其他Target也不能依赖他们。
+他们的执行规则如下:
+
+\begin{itemize}
+	\item 如果要构建的Target所在的文件有`Main`，则构建一次Main
+	\item 如果`Main`所在文件所定义的任何一个Target不需要构建，则不构建Target
+	\item 任何加载过的文件的`Init`Target都会构建，与目标无关。
+\end{itemize}
+注意，`Main`和`Init`都只构建一次。
+
+
+
+\section{Doing的Cmdlet参考}
+Doing为PowerShell实现了一些有利于构建的Cmdlet。
+
+%TODO Cmdlet简介
+
+
+
+
+
+
+
+
+

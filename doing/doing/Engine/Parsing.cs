@@ -113,7 +113,7 @@ namespace Doing.Engine
                         if (Program.DoingVersion.CompareTo(required) < 0)
                         {
                             // 退出
-                            throw new DException.RuntimeException($"Doing version too low!\nAt File `{fileName}` Lines {lineNumber}.\n" +
+                            throw new DException.RuntimeException($"Doing version too low!\nAt `{fileName}` Lines {lineNumber}.\n" +
                                 $"Required {required} at least!");
                         }
                     }

@@ -1,0 +1,11 @@
+
+# 定义了一个Target
+# 依赖于Dep
+
+##! VersionRequired 1.2.0.0
+
+@Target Default : 你好
+
+	Write-Host "From Default"
+	
+@EndTarget
