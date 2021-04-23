@@ -1,2 +1,2 @@
-# The docs base vuepress
+# The docs base GoLaTeX
 # See ./docs
