@@ -126,15 +126,15 @@ namespace Doing
         {
             Tool.Printer.PutLine("Usage:doing [-(-)Option] [Target]");
             Tool.Printer.PutLine("Option:");
-            Tool.Printer.PutLine("\t--Define=[Key]=[Value]\t\tDefine key-value pair.");
-            Tool.Printer.PutLine("\t--File=[FileName]\t\tDefine what file you want to build.");
-            Tool.Printer.PutLine("\t--Help\t\tGet help of Doing then exit.");
-            Tool.Printer.PutLine("\t--Thread=[Number]\t\tSet the doing max build thread count.");
-            Tool.Printer.PutLine("\t--Debug\t\t\tEnable the debug mode.");
-            Tool.Printer.PutLine("\t--Version\t\tPrint the doing version.");
-            Tool.Printer.PutLine("\t--Info\t\t\tPrint more info about doing.");
-            Tool.Printer.PutLine("\t--NoLogo\t\tNot output the logo.");
-            Tool.Printer.PutLine("\t--KeepGoOn\t\tContinue when error.");
+            Tool.Printer.PutLine("\t-define=[Key]=[Value]\t\tDefine key-value pair.");
+            Tool.Printer.PutLine("\t-file=[FileName]\t\tDefine what file you want to build.");
+            Tool.Printer.PutLine("\t-help\t\tGet help of Doing then exit.");
+            Tool.Printer.PutLine("\t-thread=[Number]\t\tSet the doing max build thread count.");
+            Tool.Printer.PutLine("\t-debug\t\t\tEnable the debug mode.");
+            Tool.Printer.PutLine("\t-version\t\tPrint the doing version.");
+            Tool.Printer.PutLine("\t-info\t\t\tPrint more info about doing.");
+            Tool.Printer.PutLine("\t-noLogo\t\tNot output the logo.");
+            Tool.Printer.PutLine("\t-keepGoOn\t\tContinue when error.");
         }
 
 
@@ -157,35 +157,35 @@ namespace Doing
             foreach (var arg in args)
             {
                 // 一些小杂碎的事情
-                if (arg == "--Help")
+                if (arg == "-help")
                 {
                     PrintHelp();
                     Environment.Exit(0);
                 }
-                else if (arg == "--Version")
+                else if (arg == "-version")
                 {
                     Tool.Printer.PutLine(DoingVersion.ToString());
                     Environment.Exit(0);
                 }
-                else if (arg == "--Info")
+                else if (arg == "-info")
                 {
                     PrintInfo();
                     Environment.Exit(0);
                 }
-                else if (arg == "--NoLogo")
+                else if (arg == "-noLogo")
                 {
                     isPrintLogo = false;
                 }
-                else if (arg == "--Debug")
+                else if (arg == "-debug")
                 {
                     IsDebug = true;
                 }
-                else if (arg == "--KeepGoOn")
+                else if (arg == "-keepGoOn")
                 {
                     KeepGoOn_ = true;
                 }
                 // 指定线程数量
-                else if (arg.StartsWith("--Thread="))
+                else if (arg.StartsWith("-thread="))
                 {
                     string num = arg[2..];
 
@@ -207,7 +207,7 @@ namespace Doing
                     }
                 }
                 // 指定构建文件
-                else if (arg.StartsWith("--File="))
+                else if (arg.StartsWith("-file="))
                 {
                     BuildFile = arg[2..];
 
@@ -219,7 +219,7 @@ namespace Doing
                     }
                 }
                 // 定义全局变量
-                else if (arg.StartsWith("--Define="))
+                else if (arg.StartsWith("-define="))
                 {
                     // 格式:-d[KEY=VALUE]
                     string keyValue = arg[2..];
